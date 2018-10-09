@@ -1,18 +1,17 @@
-from django.shortcuts import render
-from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404
-from django.http import HttpResponseRedirect
-from django.urls import reverse
-from django.views import generic
-
+from django.views import View
 
 # Create your views here.
 
 
-"""class IndexView(generic.View):
-    def homePage(self, request):
-        return HttpResponse("Hello, world")"""
+class MainView(View):
+    template_name = 'RouteFinderWeb/index.html'
+    mystring = "Hello, world"
+
+    def get(self, request):
+        context = {'mystring': self.mystring}
+        return render(request, self.template_name, context=context)
 
 
-def homepage(request):
-    return HttpResponse("Hello, world.  You are at the Routefinder index.")
+"""def homepage(request):
+    return HttpResponse("Hello, world.  You are at the Routefinder index.")"""
