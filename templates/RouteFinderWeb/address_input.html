@@ -1,0 +1,6 @@
+<form action="/addresses/" method="post" name="get_addresses">
+    {% csrf_token %}
+    {{ address_form }}
+    <div></div>
+    <input type="submit" value="Calculate">
+</form>

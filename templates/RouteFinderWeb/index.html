@@ -5,7 +5,18 @@
     <title>RouteFinder</title>
 </head>
 <body>
-    <div><h1>This is a title</h1></div>
+    <div><h1>RouteFinder</h1></div>
     <div><p>{{ mystring }}</p></div>
+    <div>
+        <form action="/addresses/" method="post" name="get_addresses">
+            {% csrf_token %}
+            {{ home_address }}
+            <div>{{ address_list }}</div>
+            <div><input type="submit" value="Calculate"></div>
+
+        </form>
+    </div>
+
+
 </body>
 </html>
