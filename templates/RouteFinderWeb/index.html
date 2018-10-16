@@ -1,3 +1,4 @@
+{%  load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,14 +8,11 @@
 <body>
     <div><h1>RouteFinder</h1></div>
     <div><p>{{ mystring }}</p></div>
-    <div>
-        <form action="/addresses/" method="post" name="get_addresses">
-            {% csrf_token %}
-            {{ home_address }}
-            <div>{{ address_list }}</div>
-            <div><input type="submit" value="Calculate"></div>
-
-        </form>
+    </div>
+    <div id="form">
+        {% block form %}
+            <h2>This is the form location, the template is not loading</h2>
+        {% endblock %}
     </div>
 
 

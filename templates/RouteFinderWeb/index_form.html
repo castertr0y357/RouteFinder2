@@ -1,0 +1,11 @@
+{% extends 'index.html' %}
+
+{% block form %}
+    <div>
+        <form action="" method="post" name="get_addresses">
+            {% csrf_token %}
+            {{ form.as_table }}
+            <input type="submit" value="Calculate">
+        </form>
+    </div>
+{% endblock form %}

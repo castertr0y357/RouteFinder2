@@ -7,15 +7,19 @@ from . import forms
 
 class MainView(View):
     template_name = 'RouteFinderWeb/index.html'
-    mystring = "Please enter addresses in, one at a time"
     address_list = forms.AddressForm
-    home = address_list.home_address
-    addresses = address_list.addresses
 
     def get(self, request):
-        context = {'mystring': self.mystring,
-                   'home_address': self.home,
-                   'address_list': self.addresses}
-        return render(request, self.template_name, context=context)
+        if request.method == 'POST':  # If form has been filled out and submitted
+
+            context = {'mystring': 'You have successfully submitted the form',
+                       }
+
+            return render(request, self.template_name, context=context)
+
+        else:  # If GET request
+            context = {'form': self.address_list,
+                       }
+            return render(request, self.template_name, context=context)
 
 
