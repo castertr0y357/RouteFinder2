@@ -1,4 +1,4 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, HttpResponseRedirect, reverse
 from django.views import View
 from . import forms
 
@@ -6,20 +6,31 @@ from . import forms
 
 
 class MainView(View):
-    template_name = 'RouteFinderWeb/index.html'
-    address_list = forms.AddressForm
+    template_name = 'RouteFinderWeb/index_form.html'
+    address_list = forms.AddressForm()
 
     def get(self, request):
-        if request.method == 'POST':  # If form has been filled out and submitted
+        context = {'form': self.address_list,
+                   }
+        return render(request, self.template_name, context=context)
 
-            context = {'mystring': 'You have successfully submitted the form',
-                       }
+    def post(self, request):
 
-            return render(request, self.template_name, context=context)
-
-        else:  # If GET request
-            context = {'form': self.address_list,
-                       }
-            return render(request, self.template_name, context=context)
+        return HttpResponseRedirect(reverse('results'))
 
 
+class ResultsView(View):
+    template_name = 'RouteFinderWeb/route.html'
+    address_list = forms.AddressForm()
+
+    def get(self, request):
+
+        context = {'Test': 'Test successful',
+                   'form': self.address_list,
+                   }
+
+        return render(request, self.template_name, context=context)
+
+    def post(self, request):
+
+        return HttpResponseRedirect(reverse('results'))

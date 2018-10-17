@@ -3,10 +3,11 @@ import googlemaps
 gapi = "AIzaSyC2mfL58CI4oSI31dB9afbJZ5EN_wDQirg"
 gmaps = googlemaps.Client(key=gapi)
 distance = gmaps.distance_matrix
+location = gmaps.find_place
 
-input_points = []
-map_points = []
-map_order = []
+# input_points = []
+# map_order = []
+# map_points = []
 
 
 class Point:
@@ -16,6 +17,14 @@ class Point:
     def __init__(self, address):
         self.address = address
         self.value = 0
+
+    @staticmethod
+    def is_address_good(address):
+        result = location(address)
+        if result["status"] == "OK":
+            return True
+        else:
+            return False
 
     @staticmethod
     def find_distance(point1, point2):
@@ -43,10 +52,12 @@ class Point:
 
     @staticmethod
     def create_points(points_list):
+        map_points = []
         for x in points_list:
             map_points.append(Point(x))  # Create point with just address.  Value is initialized to 0
-        return
+        return map_points
 
+    """
     @staticmethod
     def get_input_points():
         print("Enter addresses, one per line, or hit enter to finish:")
@@ -59,9 +70,10 @@ class Point:
                 break
             else:
                 input_points.append(point_input)
+    """
 
     @staticmethod
-    def print_points():
+    def print_points(home, map_order):
         counter = 1
 
         left_point = Point("")
@@ -80,11 +92,12 @@ class Point:
             else:
                 right_point = x
                 break
-
+        """        
         print("")
         print("left point: " + left_point.address)
         print("right point: " + right_point.address)
         print("")
+        """
 
         # Find out if the leftmost point is closer to home than the rightmost point
         # If it is, then print out the points from left to right
@@ -93,7 +106,7 @@ class Point:
                 if x == "":
                     pass
                 else:
-                    print(str(counter) + ": " + x.address)
+                    # print(str(counter) + ": " + x.address)
                     counter += 1
 
         else:  # If the rightmost point is closer to home, print points right to left
@@ -101,12 +114,14 @@ class Point:
                 if x == "":
                     pass
                 else:
-                    print(str(counter) + ": " + x.address)
+                    # print(str(counter) + ": " + x.address)
                     counter += 1
         return
 
     @staticmethod
-    def create_route():
+    def create_route(home, input_points):
+        map_order = []
+
         for x in range((input_points.__len__() * 2) + 3):  # Append empty spots for index assignment
             map_order.append("")
         center = int(map_order.__len__() / 2)  # Center is close to middle to allow for growth on either side
@@ -118,7 +133,7 @@ class Point:
         print("")
         print("Home address: " + home.address)
 
-        Point.create_points(input_points)
+        map_points = Point.create_points(input_points)
 
         # Working from shortest 2 points out
 
@@ -241,11 +256,13 @@ class Point:
                 map_order[right] = min_point
                 map_points.remove(min_point)
 
-        Point.print_points()  # Print out the points for the user.
+            return map_order
+
+        # Point.print_points()  # Print out the points for the user.
 
 
-home_address = input("Please enter your starting address: ")
-home = Point(home_address)
-Point.get_input_points()
-Point.create_route()
+# home_address = input("Please enter your starting address: ")
+# home = Point(home_address)
+# Point.get_input_points()
+# Point.create_route()
 

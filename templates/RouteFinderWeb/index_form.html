@@ -1,17 +1,18 @@
-{% extends 'index.html' %}
-
-<html lang="en">
-<body>
+{% extends "./index.html" %}
 
 {% block form %}
     <div>
         <form action="" method="post" name="get_addresses">
             {% csrf_token %}
-            {{ form.as_table }}
+            <table>
+                {{ form.as_table }}
+            </table>
             <input type="submit" value="Calculate">
         </form>
     </div>
 {% endblock form %}
 
-</body>
-</html>
+    <div>
+        {% block results %}<h2>Results location</h2>{% endblock results %}
+    </div>
+
