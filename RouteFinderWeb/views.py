@@ -1,8 +1,12 @@
 from django.shortcuts import render, HttpResponseRedirect, reverse
 from django.views import View
 from . import forms
+from . import RouteFinder2
 
 # Create your views here.
+
+start = ""
+addresses = []
 
 
 class MainView(View):
@@ -16,7 +20,16 @@ class MainView(View):
 
     def post(self, request):
 
-        return HttpResponseRedirect(reverse('results'))
+        form = forms.AddressForm(request.POST)
+        if form.is_valid():
+
+            global start
+            global addresses
+            start = form.cleaned_data['start']
+            addresses = form.cleaned_data['addresses']
+            # print(addresses)
+
+            return HttpResponseRedirect(reverse('results'))
 
 
 class ResultsView(View):
@@ -24,8 +37,15 @@ class ResultsView(View):
     address_list = forms.AddressForm()
 
     def get(self, request):
+        print(addresses)
+        home = RouteFinder2.Point(start)
+        points_list = RouteFinder2.Point.create_points(addresses)
+        for x in points_list:
+            print(x.address)
+        route = RouteFinder2.Point.create_route(home, points_list)
+        points = RouteFinder2.Point.print_points(home, route)
 
-        context = {'Test': 'Test successful',
+        context = {'addresses': points,
                    'form': self.address_list,
                    }
 
@@ -33,4 +53,9 @@ class ResultsView(View):
 
     def post(self, request):
 
-        return HttpResponseRedirect(reverse('results'))
+        form = forms.AddressForm(request.POST)
+        if form.is_valid():
+            start = form.cleaned_data['start']
+            addresses = form.cleaned_data['addresses']
+
+            return HttpResponseRedirect(reverse('results'))

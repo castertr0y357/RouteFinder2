@@ -1,5 +1,13 @@
 {% extends "./index_form.html" %}
 
 {% block results %}
-    {{ Test }}
+    {% if addresses %}
+    <ol>
+        {% for address in addresses %}
+            <li>{{ address }}</li>
+        {% endfor %}
+    </ol>
+    {% else %}
+    <h3>No results are available here.</h3>
+    {% endif %}
 {% endblock results %}

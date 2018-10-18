@@ -20,7 +20,7 @@ class Point:
 
     @staticmethod
     def is_address_good(address):
-        result = location(address)
+        result = location(address, 'textquery')
         if result["status"] == "OK":
             return True
         else:
@@ -28,6 +28,8 @@ class Point:
 
     @staticmethod
     def find_distance(point1, point2):
+        print(point1.address)
+        print(point2.address)
         result = distance(point1.address, point2.address, units="imperial")
         point2.value = result["rows"][0]["elements"][0]["duration"]["value"]  # Value in seconds
         return point2.value
@@ -104,7 +106,7 @@ class Point:
         if Point.find_distance(home, left_point) < Point.find_distance(home, right_point):
             for x in map_order:
                 if x == "":
-                    pass
+                    map_order.remove(x)
                 else:
                     # print(str(counter) + ": " + x.address)
                     counter += 1
@@ -112,18 +114,20 @@ class Point:
         else:  # If the rightmost point is closer to home, print points right to left
             for x in reversed(map_order):
                 if x == "":
-                    pass
+                    map_order.remove(x)
                 else:
                     # print(str(counter) + ": " + x.address)
                     counter += 1
-        return
+        return map_order
 
     @staticmethod
     def create_route(home, input_points):
+        # print(input_points)
         map_order = []
 
         for x in range((input_points.__len__() * 2) + 3):  # Append empty spots for index assignment
             map_order.append("")
+        # print(map_order)
         center = int(map_order.__len__() / 2)  # Center is close to middle to allow for growth on either side
         left = center - 2
         right = center
