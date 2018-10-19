@@ -28,8 +28,6 @@ class Point:
 
     @staticmethod
     def find_distance(point1, point2):
-        print(point1.address)
-        print(point2.address)
         result = distance(point1.address, point2.address, units="imperial")
         point2.value = result["rows"][0]["elements"][0]["duration"]["value"]  # Value in seconds
         return point2.value
@@ -146,17 +144,24 @@ class Point:
         for x in range(map_points.__len__()):
             shortest_points_list.append(empty_list)
 
+        print("Shortest points list: ")
+        print(shortest_points_list)
+
         count = 0
         shortest = 0
 
         for x in map_points:
+            print("X address: " + x.address)
             for y in map_points:
+                print("Y address: " + y.address)
                 if x == y:
                     pass
                 else:
                     Point.find_distance(x, y)
             shortest_points_list[count][0] = x
+            print("Shortest 0: " + shortest_points_list[count][0].address)
             shortest_points_list[count][1] = Point.find_min(map_points)
+            print("Shortest 1: " + shortest_points_list[count][1].address)
             count += 1
 
         for x in range(shortest_points_list.__len__()):
@@ -164,15 +169,17 @@ class Point:
                 shortest = x
             elif shortest_points_list[x][1].value < shortest_points_list[shortest][1].value:
                     shortest = x
+        print("Shortest points list: ")
+        print(shortest_points_list)
 
         # Add shortest points to center of map order
 
         map_order[center] = shortest_points_list[shortest][1]
+        print("Center address: " + map_order[center].address)
         map_points.remove(map_order[center])
-        print(map_order[center].address)
         map_order[(center - 1)] = shortest_points_list[shortest][0]
+        print("Center -1 address: " + map_order[(center - 1)].address)
         map_points.remove(map_order[(center - 1)])
-        print(map_order[(center - 1)].address)
 
         # Add home address into map points
 

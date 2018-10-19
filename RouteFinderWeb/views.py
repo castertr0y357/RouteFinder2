@@ -37,12 +37,8 @@ class ResultsView(View):
     address_list = forms.AddressForm()
 
     def get(self, request):
-        print(addresses)
         home = RouteFinder2.Point(start)
-        points_list = RouteFinder2.Point.create_points(addresses)
-        for x in points_list:
-            print(x.address)
-        route = RouteFinder2.Point.create_route(home, points_list)
+        route = RouteFinder2.Point.create_route(home, addresses)
         points = RouteFinder2.Point.print_points(home, route)
 
         context = {'addresses': points,
@@ -55,6 +51,8 @@ class ResultsView(View):
 
         form = forms.AddressForm(request.POST)
         if form.is_valid():
+            global start
+            global addresses
             start = form.cleaned_data['start']
             addresses = form.cleaned_data['addresses']
 
