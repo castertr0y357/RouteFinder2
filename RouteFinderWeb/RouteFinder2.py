@@ -268,7 +268,7 @@ class Point:
                     if min_point == home:  # if the next closest point is home...
                         map_order.remove(min_point)  # remove home from map order
                         left_open = False  # close the left side of the map order list
-                        reference = right
+                        reference = right - 1
                         print("left_open: " + str(left_open))
                         print("Left side is now closed")
 
