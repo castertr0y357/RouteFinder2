@@ -5,10 +5,6 @@ gmaps = googlemaps.Client(key=gapi)
 distance = gmaps.distance_matrix
 location = gmaps.find_place
 
-# input_points = []
-# map_order = []
-# map_points = []
-
 
 class Point:
     address = ""
@@ -53,6 +49,7 @@ class Point:
             elif x.value < smallest.value:
                 smallest = x
         print("find_min smallest: " + str(smallest.address))
+        print("")
         return smallest
 
     @staticmethod
@@ -79,11 +76,14 @@ class Point:
 
     @staticmethod
     def print_points(home, map_order):
-        counter = 1
+        # counter = 1
 
-        left_point = Point("")
-        right_point = Point("")
+        # print(map_order)
 
+        left_point = map_order[0]
+        right_point = map_order[(map_order.__len__() - 1)]
+
+        """
         for x in map_order:  # Go through list and find leftmost point
             if x == "":
                 pass
@@ -97,6 +97,7 @@ class Point:
             else:
                 right_point = x
                 break
+        """
 
         print("")
         print("left point: " + left_point.address)
@@ -106,6 +107,9 @@ class Point:
         # Find out if the leftmost point is closer to home than the rightmost point
         # If it is, then print out the points from left to right
         if Point.find_distance(home, left_point) < Point.find_distance(home, right_point):
+            print("Left point is closer")
+            print("")
+            """
             for x in map_order:
                 print(map_order)
                 if x == "":
@@ -113,9 +117,13 @@ class Point:
                 else:
                     print(str(counter) + ": " + x.address)
                     counter += 1
+            """
             return map_order
 
         else:  # If the rightmost point is closer to home, print points right to left
+            print("Left point is closer")
+            print("")
+            """
             for x in reversed(map_order):
                 print(reversed(map_order))
                 if x == "":
@@ -123,6 +131,7 @@ class Point:
                 else:
                     print(str(counter) + ": " + x.address)
                     counter += 1
+            """
             return reversed(map_order)
 
     @staticmethod
@@ -132,17 +141,16 @@ class Point:
 
         for x in range((input_points.__len__() * 2) + 3):  # Append empty spots for index assignment
             map_order.append("")
-        # print(map_order)
+        print(map_order)
         center = int(map_order.__len__() / 2)  # Center is close to middle to allow for growth on either side
         left = center - 2
         right = center
-        global left_open
-        global right_open
+        global left_open, right_open
         left_open = True
         right_open = True
 
-        print("")
         print("Home address: " + home.address)
+        print("")
 
         map_points = Point.create_points(input_points)
 
@@ -161,6 +169,7 @@ class Point:
 
         for x in map_points:
             print("count: " + str(count))
+            print("")
             print("X address: " + x.address)
             for y in map_points:
                 print("Y address: " + y.address)
@@ -170,10 +179,12 @@ class Point:
                 else:
                     Point.find_distance(x, y)
                     print("y value: " + str(y.value))
+                print("")
             shortest_points_list[count][0] = x
             print("Shortest 0: " + shortest_points_list[count][0].address)
             shortest_points_list[count][1] = Point.find_min(map_points)
             print("Shortest 1: " + shortest_points_list[count][1].address)
+            print("")
             count += 1
         """
         print("Shortest points list: ")
@@ -208,6 +219,7 @@ class Point:
         map_points.remove(map_order[center])
         map_order[(center - 1)] = shortest_points_list[shortest][0]
         print("Center -1 address: " + map_order[(center - 1)].address)
+        print("")
         map_points.remove(map_order[(center - 1)])
 
         # Add home address into map points
@@ -221,6 +233,7 @@ class Point:
         for x in range(map_points.__len__()):
             print("reference: " + str(reference))
             print(map_order[reference])
+            print("")
 
             if left_open and right_open:  # If both left and right side do not have home as a point
 
@@ -230,19 +243,19 @@ class Point:
                     Point.find_distance(map_order[reference], y)
 
                 min_point = Point.find_min(map_points)
-                print("")
                 print("min_point: " + str(min_point.address))
+                print("")
 
                 # if right point is closer, set right point
 
                 min_value = min_point.value
                 if Point.find_distance(map_order[right], min_point) < min_value:
-                    print("")
                     print("right side value: " + str(Point.find_distance(min_point, map_order[right])))
                     print("min value: " + str(min_value))
                     print("adding to right")
                     right += 1
                     print("right: " + str(right))
+                    print("")
                     reference = right
                     map_order[right] = min_point
                     map_points.remove(min_point)  # remove the minimum point from the map_points list
@@ -253,9 +266,9 @@ class Point:
                         reference = left + 1
                         print("right_open: " + str(right_open))
                         print("Right side is now closed")
+                        print("")
 
                 else:  # Set the point on the left side
-                    print("")
                     print("right side value: " + str(Point.find_distance(min_point, map_order[right])))
                     print("min value: " + str(min_value))
                     print("adding to left")
@@ -264,6 +277,7 @@ class Point:
                     reference = left
                     left -= 1
                     print("left: " + str(left))
+                    print("")
 
                     if min_point == home:  # if the next closest point is home...
                         map_order.remove(min_point)  # remove home from map order
@@ -271,46 +285,52 @@ class Point:
                         reference = right - 1
                         print("left_open: " + str(left_open))
                         print("Left side is now closed")
+                        print("")
 
             elif left_open:  # if left side only is open
-                print("")
                 print("working with left side only")
+                print("")
 
                 for y in map_points:
                     Point.find_distance(map_order[reference], y)
 
                 min_point = Point.find_min(map_points)
-                print("")
                 print("min point: " + str(min_point.address))
                 map_order[left] = min_point
                 map_points.remove(min_point)
                 reference = left
                 left -= 1
                 print("left: " + str(left))
+                print("")
 
             else:  # if right side only is open
-                print("")
                 print("working with right side only")
+                print("")
 
                 for y in map_points:
                     Point.find_distance(map_order[reference], y)
 
                 min_point = Point.find_min(map_points)
-                print("")
                 print("min point: " + str(min_point.address))
                 right += 1
                 print("right: " + str(right))
+                print("")
                 reference = right
                 map_order[right] = min_point
                 map_points.remove(min_point)
 
+        # print(map_order)
+
+        for x in map_order:
+            if x == '':
+                map_order.remove(x)
+
+        # print(map_order)
+
+        for x in reversed(map_order):
+            if x == '':
+                map_order.remove(x)
+
+        # print(map_order)
+
         return map_order
-
-        # Point.print_points()  # Print out the points for the user.
-
-
-# home_address = input("Please enter your starting address: ")
-# home = Point(home_address)
-# Point.get_input_points()
-# Point.create_route()
-
