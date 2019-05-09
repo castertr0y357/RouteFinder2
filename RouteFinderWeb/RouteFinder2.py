@@ -1,21 +1,25 @@
 import googlemaps
+from threading import Thread
 
 gapi = "AIzaSyC2mfL58CI4oSI31dB9afbJZ5EN_wDQirg"
 gmaps = googlemaps.Client(key=gapi)
 distance = gmaps.distance_matrix
 location = gmaps.find_place
 
+# TODO Create route class and split away from point class
 
-class Point:
+
+class Point(Thread):
     address = ""
     value = 0
 
     def __init__(self, address):
+        Thread.__init__(self)
         self.address = address
         self.value = 0
 
     @staticmethod
-    def is_address_good(address):
+    def is_address_good(address):  # TODO Redesign as part of point class
         result = location(address, 'textquery')
         if result["status"] == "OK":
             return True
@@ -23,13 +27,13 @@ class Point:
             return False
 
     @staticmethod
-    def find_distance(point1, point2):
+    def find_distance(point1, point2):  # TODO Redesign as part of point class
         result = distance(point1.address, point2.address, units="imperial")
         point2.value = result["rows"][0]["elements"][0]["duration"]["value"]  # Value in seconds
         return point2.value
 
     @staticmethod
-    def find_max(points):
+    def find_max(points):  # TODO Move to route class
         largest = Point("")
         for x in points:
             if x.value > largest.value:
@@ -37,7 +41,7 @@ class Point:
         return largest
 
     @staticmethod
-    def find_min(points):
+    def find_min(points):  # TODO Move to route class
         smallest = 0
         for x in points:
             print("find min x.address: " + str(x.address))
@@ -53,7 +57,7 @@ class Point:
         return smallest
 
     @staticmethod
-    def create_points(points_list):
+    def create_points(points_list):  # TODO Move to route class
         map_points = []
         for x in points_list:
             map_points.append(Point(x))  # Create point with just address.  Value is initialized to 0
@@ -75,7 +79,7 @@ class Point:
     """
 
     @staticmethod
-    def print_points(home, map_order):
+    def print_points(home, map_order):  # TODO Move to route class
         # counter = 1
 
         # print(map_order)
@@ -135,7 +139,7 @@ class Point:
             return reversed(map_order)
 
     @staticmethod
-    def create_route(home, input_points):
+    def create_route(home, input_points):  # TODO Move to route class
         # print(input_points)
         map_order = []
 

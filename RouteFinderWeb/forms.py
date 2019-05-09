@@ -23,8 +23,6 @@ class AddressForm(forms.Form):
         else:
             raise ValidationError
 
-        return home
-
     def clean_addresses(self):
         data = self.cleaned_data['addresses']
         clean_addresses = data.split('\r\n')
