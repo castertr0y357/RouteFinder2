@@ -1,49 +1,27 @@
 import googlemaps
 from threading import Thread
-
-gapi = "AIzaSyC2mfL58CI4oSI31dB9afbJZ5EN_wDQirg"
-gmaps = googlemaps.Client(key=gapi)
-distance = gmaps.distance_matrix
-location = gmaps.find_place
-
-# TODO Create route class and split away from point class
+from .Point import Point
 
 
-class Point(Thread):
-    address = ""
-    value = 0
+class Route(Thread):
 
-    def __init__(self, address):
+    def __init__(self, home, addresses):
         Thread.__init__(self)
-        self.address = address
-        self.value = 0
+        self.addresses = addresses
+        self.points = []
+        self.map_order = []
+        self.home = home
 
-    @staticmethod
-    def is_address_good(address):  # TODO Redesign as part of point class
-        result = location(address, 'textquery')
-        if result["status"] == "OK":
-            return True
-        else:
-            return False
-
-    @staticmethod
-    def find_distance(point1, point2):  # TODO Redesign as part of point class
-        result = distance(point1.address, point2.address, units="imperial")
-        point2.value = result["rows"][0]["elements"][0]["duration"]["value"]  # Value in seconds
-        return point2.value
-
-    @staticmethod
-    def find_max(points):  # TODO Move to route class
+    def find_max(self):
         largest = Point("")
-        for x in points:
+        for x in self.points:
             if x.value > largest.value:
                 largest = x
         return largest
 
-    @staticmethod
-    def find_min(points):  # TODO Move to route class
+    def find_min(self):
         smallest = 0
-        for x in points:
+        for x in self.points:
             print("find min x.address: " + str(x.address))
             print("find min x.value: " + str(x.value))
             if x.value == 0:
@@ -56,52 +34,16 @@ class Point(Thread):
         print("")
         return smallest
 
-    @staticmethod
-    def create_points(points_list):  # TODO Move to route class
-        map_points = []
+    def create_points(self, points_list):
         for x in points_list:
-            map_points.append(Point(x))  # Create point with just address.  Value is initialized to 0
-        return map_points
+            self.points.append(Point(x))  # Create point with just address.  Value is initialized to 0
+        return
 
-    """
-    @staticmethod
-    def get_input_points():
-        print("Enter addresses, one per line, or hit enter to finish:")
-        print("")
-        while True:
-            point_input = input("Address: ")
-            if point_input == "":  # If input is empty
-                print("Input points:")
-                print(input_points)
-                break
-            else:
-                input_points.append(point_input)
-    """
-
-    @staticmethod
-    def print_points(home, map_order):  # TODO Move to route class
-        # counter = 1
-
-        # print(map_order)
+    def print_points(self, home):
+        map_order = self.map_order
 
         left_point = map_order[0]
         right_point = map_order[(map_order.__len__() - 1)]
-
-        """
-        for x in map_order:  # Go through list and find leftmost point
-            if x == "":
-                pass
-            else:
-                left_point = x
-                break
-
-        for x in reversed(map_order):  # Go through list and find rightmost point
-            if x == "":
-                pass
-            else:
-                right_point = x
-                break
-        """
 
         print("")
         print("left point: " + left_point.address)
@@ -113,35 +55,18 @@ class Point(Thread):
         if Point.find_distance(home, left_point) < Point.find_distance(home, right_point):
             print("Left point is closer")
             print("")
-            """
-            for x in map_order:
-                print(map_order)
-                if x == "":
-                    map_order.remove(x)
-                else:
-                    print(str(counter) + ": " + x.address)
-                    counter += 1
-            """
+
             return map_order
 
         else:  # If the rightmost point is closer to home, print points right to left
             print("Left point is closer")
             print("")
-            """
-            for x in reversed(map_order):
-                print(reversed(map_order))
-                if x == "":
-                    map_order.remove(x)
-                else:
-                    print(str(counter) + ": " + x.address)
-                    counter += 1
-            """
+
             return reversed(map_order)
 
-    @staticmethod
-    def create_route(home, input_points):  # TODO Move to route class
+    def create_route(self, home, input_points):  # TODO Move to route class
         # print(input_points)
-        map_order = []
+        map_order = self.map_order
 
         for x in range((input_points.__len__() * 2) + 3):  # Append empty spots for index assignment
             map_order.append("")

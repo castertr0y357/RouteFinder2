@@ -22,12 +22,10 @@ class MainView(View):
 
         form = forms.AddressForm(request.POST)
         if form.is_valid():
-
             global start
             global addresses
             start = form.cleaned_data['start']
             addresses = form.cleaned_data['addresses']
-            # print(addresses)
 
             return HttpResponseRedirect(reverse('results'))
 

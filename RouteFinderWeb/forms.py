@@ -5,10 +5,10 @@ from django.core.exceptions import ValidationError
 
 class AddressForm(forms.Form):
     start = forms.CharField(widget=forms.TextInput(attrs={'size': 60}),
-                           label='Starting Address',
-                           required=True,
-                           initial='',
-                           )
+                            label='Starting Address',
+                            required=True,
+                            initial='',
+                            )
     addresses = forms.CharField(widget=forms.Textarea(attrs={'cols': 60}),
                                 label='',
                                 initial='Please input addresses, one per line',
