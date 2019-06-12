@@ -1,5 +1,6 @@
 from django import forms
-from . import RouteFinder2
+from .Point import Point
+from .Route import Route
 from django.core.exceptions import ValidationError
 
 
@@ -16,9 +17,11 @@ class AddressForm(forms.Form):
                                 )
 
     def clean_home(self):
-        home = self.cleaned_home['start']
+        start = self.cleaned_home['start']
 
-        if RouteFinder2.Point.is_address_good(home):
+        home = Point(start)
+
+        if home.is_address_good():
             return home
         else:
             raise ValidationError
@@ -30,7 +33,8 @@ class AddressForm(forms.Form):
         # Go through each address and make sure it's valid
 
         for x in clean_addresses:
-            if RouteFinder2.Point.is_address_good(x):
+            address = Point(x)
+            if address.is_address_good():
                 pass
             else:
                 raise ValidationError

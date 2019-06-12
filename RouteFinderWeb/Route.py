@@ -7,10 +7,11 @@ class Route(Thread):
 
     def __init__(self, home, addresses):
         Thread.__init__(self)
-        self.addresses = addresses
         self.points = []
         self.map_order = []
         self.home = home
+
+        self.create_points(addresses)
 
     def find_max(self):
         largest = Point("")
@@ -52,7 +53,7 @@ class Route(Thread):
 
         # Find out if the leftmost point is closer to home than the rightmost point
         # If it is, then print out the points from left to right
-        if Point.find_distance(home, left_point) < Point.find_distance(home, right_point):
+        if home.find_distance(left_point) < home.find_distance(right_point):
             print("Left point is closer")
             print("")
 
@@ -64,7 +65,7 @@ class Route(Thread):
 
             return reversed(map_order)
 
-    def create_route(self, home, input_points):  # TODO Move to route class
+    def create_route(self, home, input_points):
         # print(input_points)
         map_order = self.map_order
 
@@ -81,7 +82,7 @@ class Route(Thread):
         print("Home address: " + home.address)
         print("")
 
-        map_points = Point.create_points(input_points)
+        map_points = self.points
 
         # Working from shortest 2 points out
 
@@ -106,12 +107,12 @@ class Route(Thread):
                     y.value = 0
                     pass
                 else:
-                    Point.find_distance(x, y)
+                    x.find_distance(y)
                     print("y value: " + str(y.value))
                 print("")
             shortest_points_list[count][0] = x
             print("Shortest 0: " + shortest_points_list[count][0].address)
-            shortest_points_list[count][1] = Point.find_min(map_points)
+            shortest_points_list[count][1] = self.find_min()
             print("Shortest 1: " + shortest_points_list[count][1].address)
             print("")
             count += 1
@@ -171,15 +172,15 @@ class Route(Thread):
                 for y in map_points:
                     Point.find_distance(map_order[reference], y)
 
-                min_point = Point.find_min(map_points)
+                min_point = self.find_min()
                 print("min_point: " + str(min_point.address))
                 print("")
 
                 # if right point is closer, set right point
 
                 min_value = min_point.value
-                if Point.find_distance(map_order[right], min_point) < min_value:
-                    print("right side value: " + str(Point.find_distance(min_point, map_order[right])))
+                if map_order[right].find_distance(min_point) < min_value:
+                    print("right side value: " + str(min_point.find_distance(map_order[right])))
                     print("min value: " + str(min_value))
                     print("adding to right")
                     right += 1
