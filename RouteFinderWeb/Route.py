@@ -5,6 +5,9 @@ from .Distance import Distance
 
 
 class Route(Thread):
+    points = []
+    map_order = []
+    home = None
 
     def __init__(self, home, addresses):
         Thread.__init__(self)
@@ -45,7 +48,7 @@ class Route(Thread):
         map_order = self.map_order
 
         left_point = map_order[0]
-        right_point = map_order[(map_order.__len__() - 1)]
+        right_point = map_order[-1]
 
         print("")
         print("left point: " + left_point.address)

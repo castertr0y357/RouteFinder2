@@ -14,6 +14,8 @@ class Point(Thread):
         Thread.__init__(self)
         self.address = address
         self.value = 0
+
+    def run(self):
         self.valid_address = self.is_address_good()
 
     def is_address_good(self):

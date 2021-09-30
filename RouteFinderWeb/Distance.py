@@ -15,6 +15,8 @@ class Distance(Thread):
         Thread.__init__(self)
         self.point_1 = point_1
         self.point_2 = point_2
+
+    def run(self):
         self.value = self.find_distance()
 
     def find_distance(self):
