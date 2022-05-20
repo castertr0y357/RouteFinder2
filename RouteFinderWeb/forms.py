@@ -1,6 +1,5 @@
 from django import forms
-from .Point import Point
-from .Route import Route
+from RouteFinderWeb.Route.Point import Point
 from django.core.exceptions import ValidationError
 
 

@@ -1,4 +1,3 @@
-import googlemaps
 from threading import Thread
 from .Point import Point
 from .Distance import Distance

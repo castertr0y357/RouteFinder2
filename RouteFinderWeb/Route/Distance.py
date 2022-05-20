@@ -7,19 +7,20 @@ distance = gmaps.distance_matrix
 
 
 class Distance(Thread):
-    point_1 = None
-    point_2 = None
+    origin = None
+    destination = None
     value = 0
 
     def __init__(self, point_1, point_2):
         Thread.__init__(self)
-        self.point_1 = point_1
-        self.point_2 = point_2
+        self.origin = point_1
+        self.destination = point_2
 
     def run(self):
         self.value = self.find_distance()
+        return self
 
     def find_distance(self):
-        result = distance(self.point_1.address, self.point_2.address, units="imperial")
+        result = distance(self.origin.address, self.destination.address, units="imperial")
         value = result["rows"][0]["elements"][0]["duration"]["value"]  # Value in seconds
         return value
