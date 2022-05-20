@@ -4,14 +4,14 @@ from django.core.exceptions import ValidationError
 
 
 class AddressForm(forms.Form):
-    start = forms.CharField(widget=forms.TextInput(attrs={'size': 60}),
+    start = forms.CharField(widget=forms.TextInput(attrs={'size': 60, 'placeholder': 'Enter starting address'}),
                             label='Starting Address',
                             required=True,
                             initial='',
                             )
-    addresses = forms.CharField(widget=forms.Textarea(attrs={'cols': 60}),
+    addresses = forms.CharField(widget=forms.Textarea(attrs={'cols': 60, 'placeholder': 'Please input addresses, one per line'}),
                                 label='',
-                                initial='Please input addresses, one per line',
+                                initial='',
                                 required=True,
                                 )
 
