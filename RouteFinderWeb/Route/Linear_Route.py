@@ -23,8 +23,8 @@ class LinearRoute(Thread):
 
         while points.__len__() > 0:
             distance_list = []
+            lowest = None
             for point in points:
-                lowest = None
                 if route_order.__len__() < 1:
                     distance = Distance(home, point)
                     distance_list.append(distance)
@@ -35,6 +35,13 @@ class LinearRoute(Thread):
                     x.start()
                 for x in distance_list:
                     x.join(60)
+            for distance in distance_list:
+                if lowest is None:
+                    lowest = distance
+                else:
+                    if lowest.value > distance.value:
+                        lowest = distance
+            route_order.append(lowest)
 
 
         return route_order
