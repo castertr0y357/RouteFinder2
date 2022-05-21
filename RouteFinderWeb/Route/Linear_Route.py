@@ -4,7 +4,6 @@ from .Point import Point
 
 # Python imports
 from threading import Thread
-from concurrent.futures.thread import ThreadPoolExecutor
 
 
 class LinearRoute(Thread):
@@ -42,24 +41,6 @@ class LinearRoute(Thread):
                     if lowest.value > distance.value:
                         lowest = distance
             route_order.append(lowest)
-
+            points.remove(lowest)
 
         return route_order
-
-    @staticmethod
-    def find_first_point(home: Point, points: list):
-        first_point = None
-        shortest_distance = None
-        distance_list = []
-
-
-
-
-        for distance in distance_list:
-            if shortest_distance is None:
-                shortest_distance = distance
-            else:
-                if shortest_distance.value > distance.value:
-                    shortest_distance = distance
-
-        return first_point
