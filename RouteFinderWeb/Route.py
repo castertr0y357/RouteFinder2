@@ -1,11 +1,17 @@
+# Googlemaps imports
 import googlemaps
+
+# Python imports
 from threading import Thread
+
+# Local imports
 from .Point import Point
+from .Distance import Distance
 
 
 class Route(Thread):
 
-    def __init__(self, home, addresses):
+    def __init__(self, home: Point, addresses: list):
         Thread.__init__(self)
         self.points = []
         self.map_order = []

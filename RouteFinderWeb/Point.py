@@ -1,29 +1,23 @@
+# Googlemaps imports
 import googlemaps
-from threading import Thread
 
-gapi = "AIzaSyC2mfL58CI4oSI31dB9afbJZ5EN_wDQirg"
-gmaps = googlemaps.Client(key=gapi)
-distance = gmaps.distance_matrix
-location = gmaps.find_place
+# Local imports
+from .local_settings import api_key
 
 
-class Point(Thread):
+class Point:
     address = ""
     value = 0
 
     def __init__(self, address):
-        Thread.__init__(self)
         self.address = address
-        self.value = 0
+        self.gmaps = googlemaps.Client(key=api_key)
+        self.address_good = self.is_address_good()
 
     def is_address_good(self):
+        location = self.gmaps.find_place
         result = location(self.address, 'textquery')
         if result["status"] == "OK":
             return True
         else:
             return False
-
-    def find_distance(self, point2):
-        result = distance(self.address, point2.address, units="imperial")
-        point2.value = result["rows"][0]["elements"][0]["duration"]["value"]  # Value in seconds
-        return point2.value
