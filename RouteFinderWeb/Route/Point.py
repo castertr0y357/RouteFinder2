@@ -2,7 +2,7 @@
 import googlemaps
 
 # Local imports
-from .local_settings import api_key
+from RouteFinderWeb.local_settings import api_key
 
 
 class Point:

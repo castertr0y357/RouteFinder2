@@ -25,7 +25,7 @@ class LinearRoute(Thread):
             lowest = None
             for point in points:
                 if route_order.__len__() < 1:
-                    distance = Distance(home, point)
+                    distance, return_point = Distance(home, point)
                     distance_list.append(distance)
                 else:
                     distance = Distance(route_order[-1], point)
