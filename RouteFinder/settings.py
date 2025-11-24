@@ -22,6 +22,23 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = '8qx+ov%r8pcuyne^3spv3^3@p=4ly5aiqm9dw!hx&dufu5lzs!'
 
+# Google Maps API Key
+GOOGLE_MAPS_API_KEY = os.environ.get('GOOGLE_MAPS_API_KEY')
+
+# If not in environment, try to read from .env file (for local dev)
+if not GOOGLE_MAPS_API_KEY:
+    try:
+        from pathlib import Path
+        env_path = Path(BASE_DIR).parent / '.env'
+        if env_path.exists():
+            with open(env_path) as f:
+                for line in f:
+                    if line.startswith('GOOGLE_MAPS_API_KEY='):
+                        GOOGLE_MAPS_API_KEY = line.strip().split('=')[1]
+                        break
+    except Exception:
+        pass
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
