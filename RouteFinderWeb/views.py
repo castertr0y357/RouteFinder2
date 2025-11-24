@@ -1,33 +1,30 @@
 from django.shortcuts import render, HttpResponseRedirect, reverse
 from django.views import View
+from django.conf import settings
 from . import forms
-from . import RouteFinder2
+from .route_solver import RouteSolver
 
 # Create your views here.
-
-start = ""
-addresses = []
-
 
 class MainView(View):
     template_name = 'RouteFinderWeb/index_form.html'
     address_list = forms.AddressForm()
 
     def get(self, request):
-        context = {'form': self.address_list,
-                   }
+        context = {'form': self.address_list}
         return render(request, self.template_name, context=context)
 
     def post(self, request):
-
         form = forms.AddressForm(request.POST)
         if form.is_valid():
-            global start
-            global addresses
-            start = form.cleaned_data['start']
-            addresses = form.cleaned_data['addresses']
-
+            # Save data to session instead of global variables
+            request.session['start_address'] = form.cleaned_data['start']
+            request.session['other_addresses'] = form.cleaned_data['addresses']
             return HttpResponseRedirect(reverse('results'))
+        
+        # If form is invalid, re-render with errors
+        context = {'form': form}
+        return render(request, self.template_name, context=context)
 
 
 class ResultsView(View):
@@ -35,23 +32,38 @@ class ResultsView(View):
     address_list = forms.AddressForm()
 
     def get(self, request):
-        home = RouteFinder2.Point(start)
-        route = RouteFinder2.Point.create_route(home, addresses)
-        points = RouteFinder2.Point.print_points(home, route)
+        start_address = request.session.get('start_address')
+        other_addresses = request.session.get('other_addresses')
 
-        context = {'addresses': points,
-                   'form': self.address_list,
-                   }
+        if not start_address or not other_addresses:
+            return HttpResponseRedirect(reverse('index'))
 
-        return render(request, self.template_name, context=context)
+        api_key = settings.GOOGLE_MAPS_API_KEY
+        if not api_key:
+            return render(request, self.template_name, {'error': 'Google Maps API Key not configured.'})
+
+        try:
+            solver = RouteSolver(api_key)
+            optimized_route = solver.solve(start_address, other_addresses)
+            
+            # Format for display (optional, but good for template)
+            # Assuming template iterates over 'addresses'
+            
+            context = {
+                'addresses': optimized_route,
+                'form': self.address_list,
+            }
+            return render(request, self.template_name, context=context)
+            
+        except Exception as e:
+            return render(request, self.template_name, {'error': f'Error calculating route: {str(e)}'})
 
     def post(self, request):
-
+        # Allow new search from results page
         form = forms.AddressForm(request.POST)
         if form.is_valid():
-            global start
-            global addresses
-            start = form.cleaned_data['start']
-            addresses = form.cleaned_data['addresses']
-
+            request.session['start_address'] = form.cleaned_data['start']
+            request.session['other_addresses'] = form.cleaned_data['addresses']
             return HttpResponseRedirect(reverse('results'))
+            
+        return HttpResponseRedirect(reverse('index'))
