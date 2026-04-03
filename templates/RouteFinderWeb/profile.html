@@ -1,0 +1,19 @@
+{% extends "RouteFinderWeb/base.html" %}
+
+{% block content %}
+<div class="card">
+    <h2>Your Profile</h2>
+    <form method="post" action="{% url 'profile' %}">
+        {% csrf_token %}
+        <div class="form-group">
+            {{ form.as_p }}
+        </div>
+        <div style="margin-top: 1rem;">
+            <input type="submit" value="Save Profile">
+        </div>
+    </form>
+    <div style="margin-top: 1rem; text-align: center;">
+        <a href="{% url 'main' %}" style="color: var(--text-muted); text-decoration: none;">&larr; Back to RouteFinder</a>
+    </div>
+</div>
+{% endblock %}

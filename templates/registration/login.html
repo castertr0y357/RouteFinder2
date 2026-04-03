@@ -1,0 +1,16 @@
+{% extends "RouteFinderWeb/base.html" %}
+
+{% block content %}
+<div class="card">
+    <h2>Login</h2>
+    <form method="post" action="{% url 'login' %}">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <div style="margin-top: 1rem;">
+            <input type="submit" value="Log In">
+        </div>
+        <input type="hidden" name="next" value="{{ next | default:'/RouteFinderWeb/' }}">
+    </form>
+    <p style="margin-top: 1rem; text-align: center;">Don't have an account? <a href="{% url 'register' %}">Register</a></p>
+</div>
+{% endblock %}

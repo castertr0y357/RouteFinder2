@@ -14,12 +14,31 @@
 
 <body>
     <header>
-        <div class="container">
-            <h1>RouteFinder</h1>
+        <div class="container" style="display: flex; justify-content: space-between; align-items: center;">
+            <a href="{% url 'main' %}" style="text-decoration: none; color: inherit;"><h1>RouteFinder</h1></a>
+            <div class="auth-links">
+                {% if user.is_authenticated %}
+                <span style="color: white; margin-right: 1rem;">Welcome, {{ user.username }}</span>
+                <a href="{% url 'profile' %}" style="color: white; margin-right: 1rem; text-decoration: underline;">Profile</a>
+                <a href="{% url 'logout' %}" style="color: white; text-decoration: none; font-weight: bold;">Logout</a>
+                {% else %}
+                <a href="{% url 'login' %}" style="color: white; margin-right: 1rem; text-decoration: underline;">Login</a>
+                <a href="{% url 'register' %}" style="color: white; text-decoration: none; font-weight: bold;">Register</a>
+                {% endif %}
+            </div>
         </div>
     </header>
 
     <main class="container">
+        {% if messages %}
+        <div class="messages" style="margin-bottom: 1rem;">
+            {% for message in messages %}
+            <div style="background-color: #d1e7dd; color: #0f5132; padding: 0.75rem; border-radius: 0.375rem; margin-bottom: 0.5rem;" {% if message.tags %} class="{{ message.tags }}"{% endif %}>
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
         {% block content %}{% endblock %}
     </main>
 
