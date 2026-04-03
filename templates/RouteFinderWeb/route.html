@@ -1,11 +1,17 @@
 {% extends "RouteFinderWeb/base.html" %}
+{% extends "RouteFinderWeb/base.html" %}
 
+{% block content %}
+<div class="card">
+    <h2>Optimized Route</h2>
 {% block content %}
 <div class="card">
     <h2>Optimized Route</h2>
     {% if addresses %}
     <ol class="route-list">
+    <ol class="route-list">
         {% for address in addresses %}
+        <li>{{ address }}</li>
         <li>{{ address }}</li>
         {% endfor %}
     </ol>
@@ -23,7 +29,22 @@
     <div class="empty-state">
         <p>No results available.</p>
     </div>
+    <div class="empty-state">
+        <p>No results available.</p>
+    </div>
     {% endif %}
+
+    <div style="margin-top: 2rem;">
+        <form action="" method="post">
+            {% csrf_token %}
+            <!-- Hidden fields to re-submit if needed, or just a button to go back -->
+            <a href="{% url 'main' %}"
+                style="display: inline-block; width: 100%; text-align: center; background-color: var(--text-muted); color: white; padding: 0.75rem 1.5rem; border-radius: 0.375rem; text-decoration: none;">Start
+                New Search</a>
+        </form>
+    </div>
+</div>
+{% endblock %}
 
     <div style="margin-top: 2rem;">
         <form action="" method="post">

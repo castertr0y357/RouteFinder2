@@ -7,6 +7,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 import urllib.parse
 from . import forms
 from .route_solver import RouteSolver
+from .route_solver import RouteSolver
 
 # Create your views here.
 
@@ -68,7 +69,14 @@ class MainView(View):
             # Save data to session instead of global variables
             request.session['start_address'] = form.cleaned_data['start']
             request.session['other_addresses'] = form.cleaned_data['addresses']
+            # Save data to session instead of global variables
+            request.session['start_address'] = form.cleaned_data['start']
+            request.session['other_addresses'] = form.cleaned_data['addresses']
             return HttpResponseRedirect(reverse('results'))
+        
+        # If form is invalid, re-render with errors
+        context = {'form': form}
+        return render(request, self.template_name, context=context)
         
         # If form is invalid, re-render with errors
         context = {'form': form}
@@ -109,8 +117,11 @@ class ResultsView(View):
 
     def post(self, request):
         # Allow new search from results page
+        # Allow new search from results page
         form = forms.AddressForm(request.POST)
         if form.is_valid():
+            request.session['start_address'] = form.cleaned_data['start']
+            request.session['other_addresses'] = form.cleaned_data['addresses']
             request.session['start_address'] = form.cleaned_data['start']
             request.session['other_addresses'] = form.cleaned_data['addresses']
             return HttpResponseRedirect(reverse('results'))

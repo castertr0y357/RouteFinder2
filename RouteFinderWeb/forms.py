@@ -20,6 +20,8 @@ class AddressForm(forms.Form):
         data = self.cleaned_data['addresses']
         # Split by newline and remove empty strings
         clean_addresses = [addr.strip() for addr in data.splitlines() if addr.strip()]
+        # Split by newline and remove empty strings
+        clean_addresses = [addr.strip() for addr in data.splitlines() if addr.strip()]
         return clean_addresses
 
 class UserRegisterForm(UserCreationForm):
