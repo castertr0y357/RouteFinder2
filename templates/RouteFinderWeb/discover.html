@@ -1,0 +1,94 @@
+{% extends "RouteFinderWeb/base.html" %}
+
+{% block content %}
+<div class="card" style="padding: 1.5rem;">
+    <div style="display: flex; gap: 0.5rem; margin-bottom: 2rem; background: rgba(0,0,0,0.2); padding: 0.4rem; border-radius: 0.75rem; border: 1px solid var(--border-color);">
+        <a href="{% url 'discover' %}?mode=garage{% if request.GET.zip_code %}&zip_code={{ request.GET.zip_code }}{% endif %}" style="flex: 1; text-align: center; text-decoration: none; padding: 0.75rem; border-radius: 0.5rem; font-weight: 700; font-size: 0.9rem; transition: all 0.2s ease; background-color: {% if mode == 'garage' or not mode %}var(--garage-color){% else %}transparent{% endif %}; color: {% if mode == 'garage' or not mode %}white{% else %}var(--text-muted){% endif %};">
+            🏡 Garage Sales
+        </a>
+        <a href="{% url 'discover' %}?mode=thrift{% if request.GET.zip_code %}&zip_code={{ request.GET.zip_code }}{% endif %}" style="flex: 1; text-align: center; text-decoration: none; padding: 0.75rem; border-radius: 0.5rem; font-weight: 700; font-size: 0.9rem; transition: all 0.2s ease; background-color: {% if mode == 'thrift' %}var(--thrift-color){% else %}transparent{% endif %}; color: {% if mode == 'thrift' %}white{% else %}var(--text-muted){% endif %};">
+            🏬 Thrift Stores
+        </a>
+    </div>
+
+    <form method="get" action="{% url 'discover' %}" style="display: flex; gap: 0.75rem; align-items: stretch; margin-bottom: 1rem;">
+        <input type="hidden" name="mode" value="{{ mode|default:'garage' }}">
+        <div style="flex: 1;">
+            <input type="text" name="zip_code" value="{{ request.GET.zip_code|default:'' }}" placeholder="Enter Zip Code (e.g. 90210)" style="margin-bottom: 0; padding: 0.85rem 1rem;">
+        </div>
+        <button type="submit" style="width: auto; padding: 0 1.5rem;">Search</button>
+    </form>
+</div>
+
+{% if sales %}
+<form method="post" action="{% url 'discover' %}">
+    {% csrf_token %}
+    <input type="hidden" name="mode" value="{{ mode|default:'garage' }}">
+    <div style="display: grid; grid-template-columns: 1fr; gap: 1.5rem; margin-bottom: 3rem;">
+        {% for sale in sales %}
+        <div class="card sale-card" style="margin-bottom: 0; padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; border-left: 6px solid {% if sale.rating == 'bust' %}var(--bust-color){% elif sale.rating == 'great' %}var(--great-color){% else %}var(--primary-color){% endif %};">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div style="flex: 1;">
+                    <h3 style="font-size: 1.15rem; margin-bottom: 0.25rem;">{{ sale.title }}</h3>
+                    <p style="color: var(--text-muted); font-size: 0.9rem; font-weight: 600; margin: 0;">📍 {{ sale.address }}</p>
+                </div>
+                <div class="checkbox-wrapper" style="margin-left: 1.5rem;">
+                    <input type="checkbox" name="selected_sales" value="{{ sale.address }}" style="width: 1.75rem; height: 1.75rem; cursor: pointer; accent-color: var(--primary-color);">
+                </div>
+            </div>
+            
+            <p style="margin: 0.5rem 0; font-size: 0.95rem; line-height: 1.5; color: rgba(248, 250, 252, 0.8);">{{ sale.desc|truncatewords:40 }}</p>
+            
+            <div style="display: flex; gap: 1rem; align-items: center; justify-content: space-between; border-top: 1px solid var(--border-color); padding-top: 1rem; margin-top: 0.5rem;">
+                <div style="display: flex; gap: 1rem; align-items: center;">
+                    <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">🕒 {{ sale.time }}</span>
+                    <a href="{{ sale.source_url }}" target="_blank" rel="noopener noreferrer" style="font-size: 0.85rem; color: var(--primary-color); text-decoration: none; font-weight: 600;">View Details &rarr;</a>
+                </div>
+                {% if sale.rating != 'neutral' %}
+                <span style="padding: 0.25rem 0.75rem; border-radius: 99px; font-size: 0.75rem; font-weight: 800; background: {% if sale.rating == 'great' %}rgba(251, 191, 36, 0.15){% else %}rgba(239, 68, 68, 0.15){% endif %}; color: {% if sale.rating == 'great' %}var(--great-color){% else %}var(--bust-color){% endif %}; letter-spacing: 0.02em; border: 1px solid currentColor;">
+                   {{ sale.rating|upper }} HISTORY
+                </span>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <div style="margin-bottom: 3rem;">
+        <div class="card" style="background: rgba(99,102,241,0.05); border-left: 5px solid var(--primary-color);">
+            <h3 style="margin-top: 0; color: white; font-size: 1.15rem;">Custom Addresses</h3>
+            <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.25rem;">Found an unlisted sale elsewhere? Add it manually here.</p>
+            <div id="custom-addresses-container" style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.25rem;">
+                <!-- dynamic inputs go here -->
+            </div>
+            <button type="button" id="addCustomBtn" style="background: transparent; border: 2px dashed var(--border-color); box-shadow: none; font-size: 0.9rem; color: var(--text-muted);">+ Add Unlisted Location</button>
+        </div>
+    </div>
+    
+    <div style="text-align: right; background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(16px); padding: 1.5rem; border-top: 1px solid var(--border-color); position: sticky; bottom: 0; box-shadow: 0 -10px 30px rgba(0,0,0,0.5); border-radius: 1.5rem 1.5rem 0 0; margin: 0 -1.25rem;">
+        <input type="submit" value="Import to Route Planner" style="font-size: 1.1rem; padding: 1.1rem 2.5rem; background: linear-gradient(135deg, var(--primary-color), var(--primary-hover)); box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4); width: auto;">
+    </div>
+</form>
+
+<script>
+    document.getElementById('addCustomBtn')?.addEventListener('click', () => {
+        const container = document.getElementById('custom-addresses-container');
+        const row = document.createElement('div');
+        row.style.display = 'flex';
+        row.style.gap = '0.5rem';
+        row.innerHTML = `
+            <input type="text" name="selected_sales" placeholder="123 Example St, City, ST" style="flex: 1; margin-bottom: 0;">
+            <button type="button" onclick="this.parentElement.remove()" style="background: rgba(239, 68, 68, 0.1); color: var(--bust-color); width: 45px; padding: 0.5rem; border-radius: 0.75rem; box-shadow: none;">&times;</button>
+        `;
+        container.appendChild(row);
+    });
+</script>
+
+{% elif form.is_bound %}
+<div class="card" style="text-align: center; padding: 4rem 2rem;">
+    <div style="font-size: 3rem; margin-bottom: 1rem;">🔎</div>
+    <h3 style="margin-bottom: 0.5rem;">No results found</h3>
+    <p style="color: var(--text-muted); margin: 0;">Try a different zip code or search in another mode.</p> 
+</div>
+{% endif %}
+{% endblock %}

@@ -5,23 +5,55 @@ class RouteSolver:
     def __init__(self, api_key):
         self.gmaps = googlemaps.Client(key=api_key)
 
-    def solve(self, start_address, other_addresses):
+    def solve(self, start_address, addresses_data):
         """
-        Solves the TSP for the given addresses.
-        Returns a list of addresses in the optimal order.
+        Solves the TSP for the given addresses across defined priority tiers.
+        Returns a list of dictionaries with optimal order and leg durations.
         """
-        # Combine all addresses
-        all_addresses = [start_address] + other_addresses
+        import collections
+        buckets = collections.defaultdict(list)
+        type_lookup = {start_address: 'home'}
         
-        # Get distance matrix
-        distance_matrix = self._get_distance_matrix(all_addresses)
+        for item in addresses_data:
+            prio = int(item.get('priority', 0))
+            addr = item['address']
+            buckets[prio].append(addr)
+            type_lookup[addr] = item.get('type', 'garage')
+            
+        # determine order of bucket keys: 1, 2, 3... then 0
+        keys = sorted([k for k in buckets.keys() if k > 0])
+        if 0 in buckets:
+            keys.append(0)
+            
+        optimized_route = []
+        current_start = start_address
         
-        # Solve TSP using 2-Opt
-        route_indices = self._solve_tsp(distance_matrix)
-        
-        # Reconstruct route
-        optimized_route = [all_addresses[i] for i in route_indices]
-        
+        for k in keys:
+            bucket_addrs = buckets[k]
+            if not bucket_addrs:
+                continue
+                
+            all_addrs = [current_start] + bucket_addrs
+            distance_matrix = self._get_distance_matrix(all_addrs)
+            route_indices = self._solve_tsp(distance_matrix)
+            
+            for step in range(1, len(route_indices)): # skip 0 which is current_start
+                cur_node = route_indices[step]
+                addr = all_addrs[cur_node]
+                
+                prev_node = route_indices[step-1]
+                drive_secs = distance_matrix[prev_node][cur_node]
+                
+                optimized_route.append({
+                    'address': addr,
+                    'drive_time_seconds': drive_secs,
+                    'priority': k,
+                    'type': type_lookup.get(addr, 'garage')
+                })
+                
+            last_idx = route_indices[-1]
+            current_start = all_addrs[last_idx]
+            
         return optimized_route
 
     def _get_distance_matrix(self, locations):

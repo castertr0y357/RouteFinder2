@@ -1,57 +1,83 @@
 # RouteFinder 🗺️
 
-RouteFinder is an intelligent, containerized Django web application designed to help users efficiently optimize multi-stop journeys. Perfect for garage sales, real estate tours, or delivery routing, it calculates the most efficient traversal path and exports those directions seamlessly into your mobile navigation applications.
+RouteFinder is a premium, high-performance web optimization suite designed for weekend explorers. Whether you're hunting for the best garage sales, scouting thrift store inventory, or planning a multi-stop estate tour, RouteFinder uses intelligent TSP (Traveling Salesperson) algorithms to calculate the most efficient path for your journey.
 
-## Features ✨
+![RouteFinder UI](file:///C:/Users/caste/.gemini/antigravity/brain/bf2a7874-f468-4e6a-9b30-0f5d55fac3aa/routefinder_logo_1775224752939.png)
 
-- **Optimized Routing:** Pass in a starting location and a list of destination addresses, and the Route Solver intelligently computes the fastest path.
-- **Google Maps Integration:** Click a single button to transform your multi-stop route into a functional Google Maps Directions URL. RouteFinder intelligently segments your journey if it pushes past Google's 10-stop URL limits.
-- **User Authentication:** Robust, standard Django session management allows you to register and log in to a secure profile.
-- **Persistent Profiles:** Once registered, set a persistent "Home Address" in your profile settings. The system will inherently detect you upon return and automatically pre-fill your starting location! 
-- **Dockerized Environment:** Spins up reliably for development with minimum configuration needed. 
+## ✨ Premium Features
 
-## Prerequisites
+- **Multi-Mode Discovery**: Pivot instantly between temporary **Garage Sale** listings and permanent **Thrift Store** storefronts using Google Places intelligence.
+- **Intelligent Routing**: Automated route calculation with support for **Manual Priorities**. Fix certain stops in a specific sequence while the engine optimizes the rest.
+- **Visual Intelligence**: Custom Google Maps integration with color-coded markers:
+  - 🟢 **Emerald**: Garage Sales.
+  - 🟣 **Purple**: Thrift Stores.
+  - 🟡 **Gold**: Historical "Great Find" locations.
+  - 🔴 **Crimson**: Historical "Bust" locations (to avoid repeat mistakes).
+- **Proactive Security**: Entire application locked behind an administrative gate to protect your Google Maps API quota. 
+- **Modern "Carbon" Aesthetic**: Fully responsive, high-contrast dark-mode interface with glassmorphism effects for a premium mobile experience.
 
-- [Docker](https://docs.docker.com/get-docker/) & Docker Compose
-- **Google Maps API Key**: You must provide an active Google Maps API Key securely configured via your Google Cloud Console.
+---
 
-## Setup Instructions 🚀
+## 🚀 Setup Instructions
 
-**1. Configure Secrets**
-Start by setting up your environment configuration. Copy the skeleton variables to a functional `.env` file at the root of the project:
+### 1. Prerequisites
+- [Docker & Docker Compose](https://docs.docker.com/get-docker/)
+- [Google Maps API Key](https://console.cloud.google.com/google/maps-apis/credentials) with **Directions**, **Distance Matrix**, and **Places** APIs enabled.
+
+### 2. Configure Environment
+Create a `.env` file in the root directory:
 ```bash
-cp .env.example .env
-```
-Open `.env` and assign your active Google Cloud Developer API key to `GOOGLE_MAPS_API_KEY`.
+# API Keys
+GOOGLE_MAPS_API_KEY=your_key_here
 
-**2. Spin Up the Environment**
-Start the Docker container mapping your internal `web` interface securely.
+# App Ports
+APP_PORT=8000
+
+# Automated Admin Provisioning
+DEFAULT_ADMIN_USER=admin
+DEFAULT_ADMIN_EMAIL=admin@example.com
+DEFAULT_ADMIN_PASSWORD=adminpass123
+
+# Database (Postgres)
+POSTGRES_DB=routefinder
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+```
+
+### 3. Launch the Stack
+RouteFinder is fully orchestrated. A single command handles database setup, migrations, and superuser injection:
 ```bash
 docker-compose up --build
 ```
+Access the dashboard at `http://localhost:8000`.
 
-**3. Setup the Database**
-In a separate terminal (while Docker is running), run the local Django migrations to structure your SQLite database and initialize User Authentication models.
-```bash
-docker-compose run web python manage.py migrate
-```
+---
 
-## Usage 🛠️
+## 📱 Mobile Setup (Pro-Tip)
 
-Once running, access the web UI at [`http://localhost:8000`](http://localhost:8000).
+RouteFinder is designed as a **Progressive Web App (PWA)**, making it look and feel like a native application on your phone without needing an App Store.
 
-* **Accounts:** Click `Register` in the top right to generate a user. Select `Profile` to save your permanent route starting point.
-* **Calculations:** Enter your addresses—one per line—and click "Calculate Optimized Route."
-* **Navigation:** Click `Open Route in Google Maps` beneath the sorted list to launch the built-in map UI seamlessly.
+### 🍏 iOS (Safari)
+1. Open `http://your-server-ip:8000` in Safari on your iPhone.
+2. Tap the **Share** icon (square with an up arrow) at the bottom.
+3. Scroll down and tap **"Add to Home Screen."**
+4. The RouteFinder logo will now appear on your home screen for instant, full-screen access!
 
-## Tech Stack 💻
+### 🤖 Android (Chrome)
+1. Open the URL in Chrome.
+2. Tap the **Three Dots (⋮)** in the top right.
+3. Tap **"Install app"** or **"Add to Home screen."**
+4. Follow the prompts to add it to your launcher.
 
-- **Backend:** Python + Django 5.0+
-- **Database:** Internal SQLite3
-- **Containerization:** Gunicorn + Docker
-- **APIs:** Google Maps Directions API
-- **Deployment Strategy:** Local volume bound mounts for high-velocity prototyping.
+---
 
-## Security Overview
+## 💻 Tech Stack
+- **Engine**: Django 5.0+ (Python 3.11)
+- **Database**: PostgreSQL 15 (Docker Sidecar)
+- **Visuals**: Vanilla CSS (Glassmorphism) + Google Maps JavaScript API
+- **Serving**: Gunicorn + Whitenoise
+- **DevOps**: Docker Compose Orchestration
 
-The `db.sqlite3` system file alongside `.env`, caching utilities, and IDE directories are natively excluded from remote pushes inside `.gitignore` ensuring that your API limits and user lists are held safely in your local build.
+## 🔒 Administrative Lockdown
+- **Pending Approvals**: New user registrations are automatically set to `Disabled`. The administrator must log into the `/admin` dashboard to manually approve new users.
+- **Auto-Superuser**: If the database is fresh, the system will auto-inject the admin credentials provided in your `.env` on every startup.

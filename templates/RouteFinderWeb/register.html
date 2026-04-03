@@ -1,17 +1,24 @@
 {% extends "RouteFinderWeb/base.html" %}
 
 {% block content %}
-<div class="card">
-    <h2>Register</h2>
-    <form method="post" action="{% url 'register' %}">
-        {% csrf_token %}
-        <div class="form-group">
-            {{ form.as_p }}
+<div style="max-width: 500px; margin: 0 auto;">
+    <div class="card" style="padding: 2.5rem;">
+        <h2 style="margin-bottom: 0.5rem; text-align: center;">Join RouteFinder</h2>
+        <p style="color: var(--text-muted); margin-bottom: 2rem; text-align: center; font-size: 0.95rem;">Please apply for an account. To protect API quota, registrations are manually approved by the administrator.</p>
+        
+        <form method="post" action="{% url 'register' %}">
+            {% csrf_token %}
+            <div class="form-group">
+                {{ form.as_p }}
+            </div>
+            <div style="margin-top: 1.5rem;">
+                <input type="submit" value="Submit Application" style="padding: 1rem; font-weight: 700; background: linear-gradient(135deg, var(--garage-color), #059669); box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);">
+            </div>
+        </form>
+        
+        <div style="margin-top: 2rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem; text-align: center;">
+            <p style="color: var(--text-muted); font-size: 0.9rem;">Already have an account? <a href="{% url 'login' %}" style="color: var(--primary-color); text-decoration: none; font-weight: 700;">Sign In</a></p>
         </div>
-        <div style="margin-top: 1rem;">
-            <input type="submit" value="Register">
-        </div>
-    </form>
-    <p style="margin-top: 1rem; text-align: center;">Already have an account? <a href="{% url 'login' %}">Log In</a></p>
+    </div>
 </div>
 {% endblock %}

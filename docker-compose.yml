@@ -1,14 +1,42 @@
 version: '3.8'
 
 services:
+  db:
+    image: postgres:15-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-routefinder}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   web:
     build: .
-    command: gunicorn RouteFinder.wsgi:application --bind 0.0.0.0:8000
+    command: >
+      sh -c "python manage.py collectstatic --noinput &&
+             python manage.py migrate --noinput &&
+             python manage.py init_superuser &&
+             gunicorn RouteFinder.wsgi:application --bind 0.0.0.0:8000"
     volumes:
       - .:/app
     ports:
-      - "8000:8000"
+      - "${APP_PORT:-8000}:8000"
     environment:
+      - DATABASE_URL=postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-routefinder}
       - GOOGLE_MAPS_API_KEY=${GOOGLE_MAPS_API_KEY}
-      - DEBUG=True # Set to False in production
+      - DEFAULT_ADMIN_USER=${DEFAULT_ADMIN_USER}
+      - DEFAULT_ADMIN_EMAIL=${DEFAULT_ADMIN_EMAIL}
+      - DEFAULT_ADMIN_PASSWORD=${DEFAULT_ADMIN_PASSWORD}
+      - DEBUG=True
       - ALLOWED_HOSTS=*
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

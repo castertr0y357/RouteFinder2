@@ -1,16 +1,24 @@
 {% extends "RouteFinderWeb/base.html" %}
 
 {% block content %}
-<div class="card">
-    <h2>Login</h2>
-    <form method="post" action="{% url 'login' %}">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <div style="margin-top: 1rem;">
-            <input type="submit" value="Log In">
+<div style="max-width: 450px; margin: 0 auto;">
+    <div class="card" style="padding: 2.5rem;">
+        <h2 style="margin-bottom: 0.5rem; text-align: center;">Welcome Back</h2>
+        <p style="color: var(--text-muted); margin-bottom: 2.5rem; text-align: center; font-size: 0.95rem;">Log in to access your routes and discovery tools.</p>
+        
+        <form method="post" action="{% url 'login' %}">
+            {% csrf_token %}
+            <div class="form-group">
+                {{ form.as_p }}
+            </div>
+            <div style="margin-top: 1.5rem;">
+                <input type="submit" value="Sign In" style="padding: 1rem; font-weight: 700;">
+            </div>
+        </form>
+        
+        <div style="margin-top: 2rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem; text-align: center;">
+            <p style="color: var(--text-muted); font-size: 0.9rem;">Need an account? <a href="{% url 'register' %}" style="color: var(--primary-color); text-decoration: none; font-weight: 700;">Apply for Access</a></p>
         </div>
-        <input type="hidden" name="next" value="{{ next | default:'/RouteFinderWeb/' }}">
-    </form>
-    <p style="margin-top: 1rem; text-align: center;">Don't have an account? <a href="{% url 'register' %}">Register</a></p>
+    </div>
 </div>
 {% endblock %}
