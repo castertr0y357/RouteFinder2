@@ -1,7 +1,7 @@
 from django import forms
 from django.core.exceptions import ValidationError
 from django.contrib.auth.models import User
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from .models import UserProfile
 
 class AddressForm(forms.Form):
@@ -15,15 +15,26 @@ class AddressForm(forms.Form):
     def clean_addresses(self):
         data = self.cleaned_data['addresses']
         # Split by newline and remove empty strings
-        clean_addresses = [addr.strip() for addr in data.splitlines() if addr.strip()]
-        # Split by newline and remove empty strings
-        clean_addresses = [addr.strip() for addr in data.splitlines() if addr.strip()]
-        return clean_addresses
+        return [addr.strip() for addr in data.splitlines() if addr.strip()]
 
 class UserRegisterForm(UserCreationForm):
+    email = forms.EmailField(required=True, label="Email Address", widget=forms.EmailInput(attrs={'placeholder': 'name@example.com'}))
+
     class Meta:
         model = User
-        fields = ['username', 'email']
+        fields = ['email']
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        # Use email as username for consistency
+        user.username = self.cleaned_data['email']
+        user.email = self.cleaned_data['email']
+        if commit:
+            user.save()
+        return user
+
+class EmailAuthenticationForm(AuthenticationForm):
+    username = forms.EmailField(label="Email Address", widget=forms.EmailInput(attrs={'autofocus': True, 'placeholder': 'name@example.com'}))
 
 class UserProfileForm(forms.ModelForm):
     class Meta:
@@ -40,3 +51,8 @@ class UserProfileForm(forms.ModelForm):
 
 class SearchForm(forms.Form):
     zip_code = forms.CharField(max_length=10, label="Zip Code", widget=forms.TextInput(attrs={'placeholder': 'Enter Zip Code'}))
+    radius = forms.ChoiceField(
+        choices=[(5, '5 miles'), (10, '10 miles'), (15, '15 miles'), (30, '30 miles'), (60, '60 miles')],
+        initial=15,
+        required=False
+    )

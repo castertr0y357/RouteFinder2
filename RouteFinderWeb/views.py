@@ -1,14 +1,18 @@
-from django.shortcuts import render, HttpResponseRedirect, reverse, redirect
+import json
+import datetime
+import urllib.parse
+from django.shortcuts import render, redirect, reverse
 from django.views import View
 from django.conf import settings
-from django.contrib.auth import login
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-import urllib.parse
+from django.http import JsonResponse, HttpResponseRedirect
+
 from . import forms
+from .models import AddressRating
 from .route_solver import RouteSolver
 from .scraper import scrape_sales, scrape_thrift_stores
-from .route_solver import RouteSolver
+from .location_service import get_zip_from_coords
 
 # Create your views here.
 
@@ -123,7 +127,6 @@ class ResultsView(LoginRequiredMixin, View):
             # Fetch user's historic ratings for UI highlighting
             historic_ratings = {}
             if request.user.is_authenticated:
-                from .models import AddressRating
                 all_addrs = [item['address'] for item in optimized_route]
                 ratings_qs = AddressRating.objects.filter(user=request.user, address__in=all_addrs)
                 for rq in ratings_qs:
@@ -161,8 +164,6 @@ class ResultsView(LoginRequiredMixin, View):
         # Allow new search from results page
         form = forms.AddressForm(request.POST)
         if form.is_valid():
-            request.session['start_address'] = form.cleaned_data['start']
-            request.session['other_addresses'] = form.cleaned_data['addresses']
             request.session['start_address'] = form.cleaned_data['start']
             request.session['other_addresses'] = form.cleaned_data['addresses']
             return HttpResponseRedirect(reverse('results'))
@@ -206,23 +207,36 @@ class SaleDiscoveryView(LoginRequiredMixin, View):
     
     def get(self, request):
         zip_code = request.GET.get('zip_code')
+        radius = request.GET.get('radius', 15)
         mode = request.GET.get('mode', 'garage')
+        sort_mode = request.GET.get('sort', 'time')
         sales = []
         
         if zip_code:
-            form = forms.SearchForm(initial={'zip_code': zip_code})
+            form = forms.SearchForm(initial={'zip_code': zip_code, 'radius': radius})
             
             if mode == 'thrift':
                 api_key = getattr(settings, 'GOOGLE_MAPS_API_KEY', '')
                 sales = scrape_thrift_stores(zip_code, api_key)
             else:
-                sales = scrape_sales(zip_code)
+                sales = scrape_sales(zip_code, radius)
+                # Apply sorting logic based on start_time_sort (contains date + time)
+                if sort_mode == 'time':
+                    sales.sort(key=lambda x: x.get('start_time_sort', '9999-12-31 23:59'))
+                elif sort_mode == 'time_desc':
+                    sales.sort(key=lambda x: x.get('start_time_sort', '0000-01-01 00:00'), reverse=True)
+                elif sort_mode == 'title':
+                    sales.sort(key=lambda x: x.get('title', '').lower())
             
             if request.user.is_authenticated and sales:
-                from .models import AddressRating
                 sale_addrs = [s['address'] for s in sales]
                 ratings_qs = AddressRating.objects.filter(user=request.user, address__in=sale_addrs)
                 historic_ratings = {rq.address: rq.rating for rq in ratings_qs}
+                hidden_addrs = {rq.address for rq in ratings_qs if rq.is_hidden}
+                
+                # Filter out hidden sales
+                sales = [s for s in sales if s['address'] not in hidden_addrs]
+                
                 for s in sales:
                     s['rating'] = historic_ratings.get(s['address'], 'neutral')
         else:
@@ -260,17 +274,9 @@ class SaleDiscoveryView(LoginRequiredMixin, View):
             
         return redirect('main')
 
-class ToggleRatingView(View):
+class ToggleRatingView(LoginRequiredMixin, View):
     def post(self, request):
-        if not request.user.is_authenticated:
-            import json
-            from django.http import JsonResponse
-            return JsonResponse({'error': 'Unauthorized'}, status=401)
-            
         try:
-            import json
-            from django.http import JsonResponse
-            from .models import AddressRating
             data = json.loads(request.body)
             address = data.get('address')
             rating = data.get('rating')
@@ -287,5 +293,65 @@ class ToggleRatingView(View):
                 
             return JsonResponse({'success': True, 'rating': rating})
         except Exception as e:
-            from django.http import JsonResponse
+            return JsonResponse({'error': str(e)}, status=500)
+
+class GetZipCodeView(LoginRequiredMixin, View):
+    def post(self, request):
+        try:
+            data = json.loads(request.body)
+            lat = data.get('lat')
+            lon = data.get('lon')
+            
+            if lat is None or lon is None:
+                return JsonResponse({'error': 'Missing coordinates'}, status=400)
+                
+            zip_code = get_zip_from_coords(lat, lon)
+            
+            if zip_code:
+                return JsonResponse({'success': True, 'zip_code': zip_code})
+            else:
+                return JsonResponse({'error': 'Could not determine zip code'}, status=404)
+                
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+class HideSaleView(LoginRequiredMixin, View):
+    def post(self, request):
+        try:
+            data = json.loads(request.body)
+            address = data.get('address')
+            
+            if not address:
+                return JsonResponse({'error': 'Missing address'}, status=400)
+                
+            obj, created = AddressRating.objects.get_or_create(
+                user=request.user, 
+                address=address
+            )
+            obj.is_hidden = True
+            obj.save()
+            
+            return JsonResponse({'success': True})
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+class GetAddressView(LoginRequiredMixin, View):
+    def post(self, request):
+        try:
+            data = json.loads(request.body)
+            lat = data.get('lat')
+            lon = data.get('lon')
+            
+            if lat is None or lon is None:
+                return JsonResponse({'error': 'Missing coordinates'}, status=400)
+                
+            from .location_service import get_address_from_coords
+            address = get_address_from_coords(lat, lon)
+            
+            if address:
+                return JsonResponse({'success': True, 'address': address})
+            else:
+                return JsonResponse({'error': 'Could not determine address'}, status=404)
+                
+        except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)

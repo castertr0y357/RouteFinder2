@@ -42,7 +42,10 @@
                 {% endif %}
                 <span style="color: var(--text-muted); margin-right: 1.25rem; font-weight: 500;">{{ user.username }}</span>
                 <a href="{% url 'profile' %}" style="color: white; margin-right: 1.25rem; text-decoration: none; font-weight: 600; opacity: 0.8; transition: opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'">Profile</a>
-                <a href="{% url 'logout' %}" style="color: white; text-decoration: none; font-weight: 700; opacity: 0.6; transition: opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'">Logout</a>
+                <form action="{% url 'logout' %}" method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" style="background: none; border: none; color: white; text-decoration: none; font-weight: 700; opacity: 0.6; transition: opacity 0.2s; cursor: pointer; padding: 0; font-family: inherit; font-size: inherit;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'">Logout</button>
+                </form>
                 {% else %}
                 <a href="{% url 'login' %}" style="color: white; margin-right: 1.25rem; text-decoration: none; font-weight: 600;">Login</a>
                 <a href="{% url 'register' %}" style="color: var(--primary-color); text-decoration: none; font-weight: 700; background: white; padding: 0.4rem 1rem; border-radius: 6px;">Register</a>

@@ -13,8 +13,23 @@
 
     <form method="get" action="{% url 'discover' %}" style="display: flex; gap: 0.75rem; align-items: stretch; margin-bottom: 1rem;">
         <input type="hidden" name="mode" value="{{ mode|default:'garage' }}">
-        <div style="flex: 1;">
-            <input type="text" name="zip_code" value="{{ request.GET.zip_code|default:'' }}" placeholder="Enter Zip Code (e.g. 90210)" style="margin-bottom: 0; padding: 0.85rem 1rem;">
+        <div style="flex: 1; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <input type="text" id="zip_code_input" name="zip_code" value="{{ request.GET.zip_code|default:'' }}" placeholder="Enter Zip Code (e.g. 90210)" style="margin-bottom: 0; padding: 0.85rem 1rem; flex: 2; min-width: 150px;">
+            <select name="radius" style="margin-bottom: 0; flex: 1; min-width: 100px;">
+                <option value="5" {% if request.GET.radius == '5' %}selected{% endif %}>5 miles</option>
+                <option value="10" {% if request.GET.radius == '10' %}selected{% endif %}>10 miles</option>
+                <option value="15" {% if request.GET.radius == '15' or not request.GET.radius %}selected{% endif %}>15 miles</option>
+                <option value="30" {% if request.GET.radius == '30' %}selected{% endif %}>30 miles</option>
+                <option value="60" {% if request.GET.radius == '60' %}selected{% endif %}>60 miles</option>
+            </select>
+            <select name="sort" style="margin-bottom: 0; flex: 1; min-width: 130px; border-color: var(--primary-color);">
+                <option value="time" {% if request.GET.sort == 'time' or not request.GET.sort %}selected{% endif %}>🕒 Early First</option>
+                <option value="time_desc" {% if request.GET.sort == 'time_desc' %}selected{% endif %}>🕒 Late First</option>
+                <option value="title" {% if request.GET.sort == 'title' %}selected{% endif %}>🔤 Name A-Z</option>
+            </select>
+            <button type="button" id="use-location-btn" style="width: auto; padding: 0 1.25rem; background: rgba(99, 102, 241, 0.1); color: var(--primary-color); border: 1px solid var(--primary-color); font-size: 0.85rem; font-weight: 700; white-space: nowrap; border-radius: 0.75rem; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; min-width: 140px;">
+                <span id="loc-btn-content">Use My Location</span>
+            </button>
         </div>
         <button type="submit" style="width: auto; padding: 0 1.5rem;">Search</button>
     </form>
@@ -29,7 +44,13 @@
         <div class="card sale-card" style="margin-bottom: 0; padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; border-left: 6px solid {% if sale.rating == 'bust' %}var(--bust-color){% elif sale.rating == 'great' %}var(--great-color){% else %}var(--primary-color){% endif %};">
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                 <div style="flex: 1;">
-                    <h3 style="font-size: 1.15rem; margin-bottom: 0.25rem;">{{ sale.title }}</h3>
+                    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.25rem;">
+                        <h3 style="font-size: 1.15rem; margin: 0;">{{ sale.title }}</h3>
+                        <button type="button" onclick="hideSale('{{ sale.address|escapejs }}', this)" title="Hide listing" style="background: rgba(239, 68, 68, 0.1); border: none; color: var(--bust-color); font-size: 0.65rem; cursor: pointer; font-weight: 800; width: 44px; height: 22px; display: flex; align-items: center; justify-content: center; border-radius: 4px; line-height: 1; letter-spacing: 0.05em; transition: all 0.2s; flex-shrink: 0;">HIDE</button>
+                        {% if "sale_test" in sale.id %}
+                        <span style="font-size: 0.65rem; padding: 0.15rem 0.4rem; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 4px; color: var(--text-muted); font-weight: 800; letter-spacing: 0.05em;">DEMO</span>
+                        {% endif %}
+                    </div>
                     <p style="color: var(--text-muted); font-size: 0.9rem; font-weight: 600; margin: 0;">📍 {{ sale.address }}</p>
                 </div>
                 <div class="checkbox-wrapper" style="margin-left: 1.5rem;">
@@ -69,6 +90,16 @@
         <input type="submit" value="Import to Route Planner" style="font-size: 1.1rem; padding: 1.1rem 2.5rem; background: linear-gradient(135deg, var(--primary-color), var(--primary-hover)); box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4); width: auto;">
     </div>
 </form>
+{% elif form.is_bound %}
+<div class="card" style="text-align: center; padding: 4rem 2rem;">
+    <div style="font-size: 3rem; margin-bottom: 1rem;">🔎</div>
+    <h3 style="margin-bottom: 0.5rem;">No results found</h3>
+    <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Try a different zip code or search in another mode.</p> 
+    <a href="https://www.craigslist.org/search/gms?postal={{ request.GET.zip_code|default:'' }}&search_distance={{ request.GET.radius|default:'20' }}" target="_blank" rel="noopener noreferrer" style="display: inline-block; padding: 0.75rem 1.5rem; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 0.5rem; color: white; text-decoration: none; font-weight: 600; font-size: 0.9rem; transition: all 0.2s ease;">
+        🔍 Search Craigslist for this area
+    </a>
+</div>
+{% endif %}
 
 <script>
     document.getElementById('addCustomBtn')?.addEventListener('click', () => {
@@ -82,13 +113,106 @@
         `;
         container.appendChild(row);
     });
+
+    const locationBtn = document.getElementById('use-location-btn');
+    const locBtnContent = document.getElementById('loc-btn-content');
+    const zipInput = document.getElementById('zip_code_input');
+
+    locationBtn?.addEventListener('click', () => {
+        // Hardening: Check for secure context
+        if (!window.isSecureContext) {
+            alert('Security Restriction: Geolocation requires a Secure Context (HTTPS or localhost). Your current connection may be blocked by the browser.');
+        }
+
+        if (!navigator.geolocation) {
+            alert('Geolocation is not supported by your browser');
+            return;
+        }
+
+        locationBtn.disabled = true;
+        const originalContent = locBtnContent.innerHTML;
+        locBtnContent.innerHTML = '<span class="spinner" style="display: inline-block; width: 0.85rem; height: 0.85rem; border: 2px solid currentColor; border-radius: 50%; border-top-color: transparent; animation: spin 1s linear infinite; margin-right: 0.5rem;"></span> Locating...';
+        
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                try {
+                    const response = await fetch('{% url "get_zip_code" %}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        },
+                        body: JSON.stringify({
+                            lat: position.coords.latitude,
+                            lon: position.coords.longitude
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    if (data.success && data.zip_code) {
+                        zipInput.value = data.zip_code;
+                        zipInput.closest('form').submit();
+                    } else {
+                        alert(data.error || 'Could not determine zip code for this location.');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Error communicating with the server.');
+                } finally {
+                    locationBtn.disabled = false;
+                    locBtnContent.innerHTML = originalContent;
+                }
+            },
+            (error) => {
+                alert('Error getting location: ' + error.message);
+                locationBtn.disabled = false;
+                locBtnContent.innerHTML = originalContent;
+            }
+        );
+    });
+
+    async function hideSale(address, btn) {
+        if (!confirm('Are you sure you want to hide this listing? It will not appear in future searches.')) return;
+        
+        try {
+            const response = await fetch('{% url "hide_sale" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({ address: address })
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                // Fade out and remove the card
+                const card = btn.closest('.sale-card');
+                card.style.transition = 'all 0.4s ease';
+                card.style.opacity = '0';
+                card.style.transform = 'translateX(20px)';
+                setTimeout(() => card.remove(), 400);
+            } else {
+                alert(data.error || 'Error hiding sale');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error communicating with the server.');
+        }
+    }
 </script>
 
-{% elif form.is_bound %}
-<div class="card" style="text-align: center; padding: 4rem 2rem;">
-    <div style="font-size: 3rem; margin-bottom: 1rem;">🔎</div>
-    <h3 style="margin-bottom: 0.5rem;">No results found</h3>
-    <p style="color: var(--text-muted); margin: 0;">Try a different zip code or search in another mode.</p> 
-</div>
-{% endif %}
+<style>
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    #use-location-btn:hover {
+        background: var(--primary-color) !important;
+        color: white !important;
+        transform: translateY(-2px);
+    }
+    #use-location-btn:active {
+        transform: translateY(0);
+    }
+</style>
 {% endblock %}

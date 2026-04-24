@@ -54,6 +54,7 @@ class AddressRating(models.Model):
     ]
     rating = models.CharField(max_length=10, choices=RATING_CHOICES, default='neutral')
     notes = models.TextField(blank=True)
+    is_hidden = models.BooleanField(default=False)
     
     class Meta:
         unique_together = ('user', 'address')

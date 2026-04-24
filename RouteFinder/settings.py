@@ -92,3 +92,10 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 LOGIN_URL = 'login'
+
+AUTHENTICATION_BACKENDS = [
+    'RouteFinderWeb.backends.EmailBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

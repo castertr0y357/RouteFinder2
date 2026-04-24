@@ -9,9 +9,12 @@
         {% csrf_token %}
         
         <div style="margin-bottom: 2.5rem;">
-            <label>Starting Base</label>
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 0.5rem;">
+                <label style="margin-bottom: 0;">Starting Base</label>
+                <button type="button" id="use-home-location-btn" style="background: transparent; border: none; color: var(--primary-color); font-size: 0.75rem; font-weight: 700; cursor: pointer; padding: 0; box-shadow: none; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 0.25rem;">📍 Use Current Location</button>
+            </div>
             <div style="position: relative;">
-                <input type="text" name="start_address" value="{{ start_address|default:'' }}" required placeholder="Your Home/Hotel Address" style="padding-left: 3rem; margin-bottom: 0;">
+                <input type="text" id="start_address_input" name="start_address" value="{{ start_address|default:'' }}" required placeholder="Your Home/Hotel Address" style="padding-left: 3rem; margin-bottom: 0;">
                 <span style="position: absolute; left: 1.15rem; top: 0.85rem; font-size: 1.1rem; filter: grayscale(1);">🏠</span>
             </div>
         </div>
@@ -91,5 +94,57 @@
     }
     
     addBtn.addEventListener('click', () => addRow());
+    // Use My Location Logic
+    const homeLocBtn = document.getElementById('use-home-location-btn');
+    const startInput = document.getElementById('start_address_input');
+
+    if (homeLocBtn) {
+        homeLocBtn.addEventListener('click', () => {
+            if (!navigator.geolocation) {
+                alert('Geolocation is not supported by your browser.');
+                return;
+            }
+
+            const originalText = homeLocBtn.innerHTML;
+            homeLocBtn.innerHTML = '⏳ Locating...';
+            homeLocBtn.disabled = true;
+
+            navigator.geolocation.getCurrentPosition(
+                async (position) => {
+                    try {
+                        const response = await fetch('{% url "get_address" %}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': '{{ csrf_token }}'
+                            },
+                            body: JSON.stringify({
+                                lat: position.coords.latitude,
+                                lon: position.coords.longitude
+                            })
+                        });
+                        
+                        const data = await response.json();
+                        if (data.success) {
+                            startInput.value = data.address;
+                        } else {
+                            alert(data.error || 'Could not determine address for this location.');
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        alert('Error communicating with the server.');
+                    } finally {
+                        homeLocBtn.disabled = false;
+                        homeLocBtn.innerHTML = originalText;
+                    }
+                },
+                (error) => {
+                    alert('Error getting location: ' + error.message);
+                    homeLocBtn.disabled = false;
+                    homeLocBtn.innerHTML = originalText;
+                }
+            );
+        });
+    }
 </script>
 {% endblock %}
