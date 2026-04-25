@@ -8,17 +8,27 @@ from urllib3.util.retry import Retry
 
 logger = logging.getLogger(__name__)
 
-# Configure a global session with connection pooling and retries
-session = requests.Session()
-retry_strategy = Retry(
-    total=3,
-    status_forcelist=[429, 500, 502, 503, 504],
-    allowed_methods=["HEAD", "GET", "OPTIONS"],
-    backoff_factor=1
-)
-adapter = HTTPAdapter(pool_connections=20, pool_maxsize=20, max_retries=retry_strategy)
-session.mount("https://", adapter)
-session.mount("http://", adapter)
+# Hardening: Consolidated global session with retries and browser-like User-Agent
+def get_hardened_session():
+    s = requests.Session()
+    retries = Retry(
+        total=4,
+        backoff_factor=0.3,
+        status_forcelist=[429, 500, 502, 503, 504],
+        raise_on_status=False,
+        allowed_methods=["HEAD", "GET", "OPTIONS"]
+    )
+    adapter = HTTPAdapter(max_retries=retries, pool_connections=25, pool_maxsize=25)
+    s.mount('http://', adapter)
+    s.mount('https://', adapter)
+    s.headers.update({
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+    })
+    return s
+
+session = get_hardened_session()
 
 def _get_yardsalesearch_sales(zip_code, radius):
     """Internal scraper for YardSaleSearch.com"""
@@ -246,18 +256,74 @@ def scrape_sales(zip_code, radius=15):
     return all_sales
 
 
+def _fetch_store_details(gmaps, place):
+    """Internal helper to fetch opening hours for a specific place."""
+    try:
+        # Request specific fields to minimize cost/latency
+        details = gmaps.place(
+            place_id=place.get('place_id'),
+            fields=['opening_hours', 'formatted_phone_number']
+        )
+        
+        result = details.get('result', {})
+        opening_hours = result.get('opening_hours', {})
+        
+        # Extract today's hours specifically
+        today_hours = "Hours not listed"
+        start_time_sort = "09:00" # Default fallback
+        weekday_text = opening_hours.get('weekday_text', [])
+        
+        if weekday_text:
+            import datetime
+            import re
+            now = datetime.datetime.now()
+            day_name = now.strftime("%A") 
+            for line in weekday_text:
+                if line.startswith(day_name):
+                    today_hours = line.split(": ", 1)[-1] if ": " in line else line
+                    
+                    # Try to parse the START time for sorting (e.g. "9:00 AM" from "9:00 AM – 5:00 PM")
+                    time_match = re.search(r'(\d{1,2}(?::\d{2})?\s*(?:AM|PM|am|pm)?)', today_hours)
+                    if time_match:
+                        raw_time = time_match.group(1).upper().replace(' ', '')
+                        try:
+                            if ':' in raw_time:
+                                t_obj = datetime.datetime.strptime(raw_time, "%I:%M%p") if 'M' in raw_time else datetime.datetime.strptime(raw_time, "%H:%M")
+                            else:
+                                t_obj = datetime.datetime.strptime(raw_time, "%I%p") if 'M' in raw_time else datetime.datetime.strptime(raw_time, "%H")
+                            start_time_sort = t_obj.strftime("%H:%M")
+                        except:
+                            pass
+                    break
+        elif opening_hours.get('open_now') is not None:
+            today_hours = "Open Now" if opening_hours['open_now'] else "Closed Now"
+            
+        return {
+            'hours': today_hours,
+            'start_time_sort': start_time_sort,
+            'phone': result.get('formatted_phone_number', 'No phone listed')
+        }
+    except:
+        return {'hours': 'Hours not listed', 'start_time_sort': '09:00', 'phone': 'No phone listed'}
+
 def scrape_thrift_stores(zip_code, api_key):
     """
-    Utilizes Google Maps Places API to locate thrift stores with exact coordinates and ratings.
+    Utilizes Google Maps Places API to locate thrift stores.
+    Now enriched with today's business hours and normalized start times for sorting.
     """
     import googlemaps
     try:
         gmaps = googlemaps.Client(key=api_key)
-        # Search for thrift stores in specific zip code natively
         places_result = gmaps.places(query=f"thrift store in {zip_code}")
         
+        base_results = places_result.get('results', [])[:10] # Limit to top 10 for performance
         stores = []
-        for idx, place in enumerate(places_result.get('results', [])):
+        
+        # Enrich results with hours in parallel
+        with ThreadPoolExecutor(max_workers=5) as executor:
+            details_map = list(executor.map(lambda p: _fetch_store_details(gmaps, p), base_results))
+        
+        for idx, (place, detail) in enumerate(zip(base_results, details_map)):
             rating = place.get('rating', 'N/A')
             reviews = place.get('user_ratings_total', 0)
             
@@ -265,9 +331,10 @@ def scrape_thrift_stores(zip_code, api_key):
                 'id': place.get('place_id', f"place_{idx}"),
                 'title': place.get('name'),
                 'address': place.get('formatted_address', f"Unknown Address, {zip_code}"),
-                'time': 'Check Google Maps for Business Hours',
-                'desc': f"Google Places Rating: {rating}⭐ ({reviews} reviews)",
+                'time': f"Today: {detail['hours']}",
+                'desc': f"Rating: {rating}⭐ ({reviews} reviews) | 📞 {detail['phone']}",
                 'source_url': f"https://www.google.com/maps/place/?q=place_id:{place.get('place_id')}",
+                'start_time_sort': detail['start_time_sort']
             })
             
         return stores

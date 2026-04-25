@@ -5,10 +5,10 @@ class RouteSolver:
     def __init__(self, api_key):
         self.gmaps = googlemaps.Client(key=api_key)
 
-    def solve(self, start_address, addresses_data):
+    def solve(self, start_address, addresses_data, return_to_start=True):
         """
         Solves the TSP for the given addresses across defined priority tiers.
-        Returns a list of dictionaries with optimal order and leg durations.
+        Optionally includes a final leg back to the start_address.
         """
         import collections
         buckets = collections.defaultdict(list)
@@ -53,6 +53,20 @@ class RouteSolver:
                 
             last_idx = route_indices[-1]
             current_start = all_addrs[last_idx]
+            
+        # Optional: Add return leg back to home base
+        if return_to_start and optimized_route:
+            last_stop = optimized_route[-1]['address']
+            # Quick one-off distance matrix for the return leg
+            return_matrix = self._get_distance_matrix([last_stop, start_address])
+            return_drive_secs = return_matrix[0][1]
+            
+            optimized_route.append({
+                'address': start_address,
+                'drive_time_seconds': return_drive_secs,
+                'priority': 'Home',
+                'type': 'home_return'
+            })
             
         return optimized_route
 

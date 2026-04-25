@@ -7,8 +7,13 @@ from django.dispatch import receiver
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    home_address = models.TextField(blank=True)
+    home_street = models.TextField(blank=True, help_text="Street address and City")
+    home_zip = models.CharField(max_length=10, blank=True)
+    home_state = models.CharField(max_length=2, blank=True)
     default_stop_mins = models.IntegerField(default=15, help_text="Default minutes spent at each individual garage sale.")
+    
+    # AI Discovery Preferences
+    looking_for = models.TextField(blank=True, help_text="Comma-separated items you are looking for (e.g. 'Vintage Pyrex, Gameboy')")
 
     def __str__(self):
         return f"{self.user.username}'s Profile"
@@ -35,7 +40,7 @@ class SavedRoute(models.Model):
 class RouteStop(models.Model):
     route = models.ForeignKey(SavedRoute, on_delete=models.CASCADE, related_name='stops')
     order_index = models.IntegerField()
-    address = models.TextField()
+    address = models.CharField(max_length=500, db_index=True)
     drive_time_str = models.TextField(blank=True)
     arrival_time = models.TextField(blank=True)
     departure_time = models.TextField(blank=True)
@@ -45,7 +50,7 @@ class RouteStop(models.Model):
 
 class AddressRating(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='address_ratings')
-    address = models.TextField()
+    address = models.CharField(max_length=500, db_index=True)
     
     RATING_CHOICES = [
         ('bust', 'Bust'),
@@ -61,3 +66,11 @@ class AddressRating(models.Model):
         
     def __str__(self):
         return f"{self.address} ({self.rating})"
+class ScoutIntel(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='scout_intel')
+    data = models.JSONField(default=list)
+    metadata = models.JSONField(default=dict)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Scout Intel for {self.user.username}"

@@ -39,14 +39,20 @@ class EmailAuthenticationForm(AuthenticationForm):
 class UserProfileForm(forms.ModelForm):
     class Meta:
         model = UserProfile
-        fields = ['home_address', 'default_stop_mins']
+        fields = ['home_street', 'home_zip', 'home_state', 'default_stop_mins', 'looking_for']
         labels = {
-            'home_address': 'Home Address',
-            'default_stop_mins': 'Default Minutes Per Sale'
+            'home_street': 'Street & City',
+            'home_zip': 'Zip Code',
+            'home_state': 'State (2-letter)',
+            'default_stop_mins': 'Default Minutes Per Sale',
+            'looking_for': 'What are you looking for? (AI Wishlist)',
         }
         widgets = {
-            'home_address': forms.TextInput(attrs={'placeholder': '123 Main St, Springfield, ST'}),
-            'default_stop_mins': forms.NumberInput(attrs={'min': 0})
+            'home_street': forms.TextInput(attrs={'placeholder': '123 Main St, City'}),
+            'home_zip': forms.TextInput(attrs={'placeholder': '90210'}),
+            'home_state': forms.TextInput(attrs={'placeholder': 'CA', 'maxlength': '2'}),
+            'default_stop_mins': forms.NumberInput(attrs={'min': 0}),
+            'looking_for': forms.Textarea(attrs={'rows': 2, 'placeholder': 'e.g. Vintage Pyrex, Gameboy, Tools'}),
         }
 
 class SearchForm(forms.Form):

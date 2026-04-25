@@ -12,15 +12,47 @@
     <link rel="stylesheet" href="{% static 'RouteFinderWeb/style.css' %}">
     
     <!-- Progressive Web App tags -->
-    <link rel="manifest" href="{% static 'manifest.json' %}">
+    <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#0f171c">
     <link rel="apple-touch-icon" href="{% static 'icon.png' %}">
     <script>
+      let deferredPrompt;
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', function() {
-          navigator.serviceWorker.register("{% static 'sw.js' %}");
+          navigator.serviceWorker.register("/sw.js");
         });
       }
+
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        // Show an install button if you have one
+        const installBtn = document.getElementById('install-pwa-btn');
+        if (installBtn) installBtn.style.display = 'inline-block';
+      });
+
+      function installPWA() {
+        if (deferredPrompt) {
+          deferredPrompt.prompt();
+          deferredPrompt.userChoice.then((choiceResult) => {
+            if (choiceResult.outcome === 'accepted') {
+              console.log('User accepted the PWA install');
+            }
+            deferredPrompt = null;
+          });
+        }
+      }
+
+      // iOS Detection & Tip Display
+      window.addEventListener('load', () => {
+          const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+          const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+          
+          if (isIOS && !isStandalone) {
+              const iosTip = document.getElementById('ios-install-tip');
+              if (iosTip) iosTip.style.display = 'inline-block';
+          }
+      });
     </script>
 </head>
 
@@ -36,6 +68,11 @@
                 </nav>
             </div>
             <div class="auth-links" style="display: flex; align-items: center; font-size: 0.9rem;">
+                <button id="install-pwa-btn" onclick="installPWA()" style="display: none; background: var(--primary-color); color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.75rem; font-weight: 800; margin-right: 1.25rem; cursor: pointer; letter-spacing: 0.05em; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);">📲 INSTALL APP</button>
+                <div id="ios-install-tip" style="display: none; background: rgba(255,255,255,0.05); color: var(--text-muted); padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.7rem; font-weight: 600; margin-right: 1.25rem; border: 1px solid var(--border-color); cursor: help;" title="Tap 'Share' and then 'Add to Home Screen' to install.">📲 iOS: TAP SHARE &rarr; [+]</div>
+                {% if not google_maps_api_key and user.is_superuser %}
+                <span style="background: rgba(239, 68, 68, 0.1); color: var(--bust-color); font-size: 0.75rem; font-weight: 800; padding: 0.4rem 0.8rem; border-radius: 6px; border: 1px solid var(--bust-color); letter-spacing: 0.05em; margin-right: 1.25rem;">⚠️ MISSING MAPS API KEY</span>
+                {% endif %}
                 {% if user.is_authenticated %}
                 {% if user.is_staff or user.is_superuser %}
                 <a href="/admin/" style="background-color: var(--bust-color); color: white; padding: 0.4rem 0.75rem; border-radius: 6px; text-decoration: none; font-weight: 700; margin-right: 1.25rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);">🛡️ Admin</a>

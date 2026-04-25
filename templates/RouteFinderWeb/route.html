@@ -4,65 +4,35 @@
 <div class="card" style="padding: 1.5rem; margin-bottom: 2.5rem;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
         <h2>Optimized Itinerary</h2>
-        <div style="font-size: 0.85rem; background: rgba(16, 185, 129, 0.1); color: var(--garage-color); padding: 0.35rem 0.75rem; border-radius: 99px; font-weight: 700; border: 1px solid rgba(16, 185, 129, 0.2);">
-            ACTIVE ROUTE
+        <div id="route-status" style="font-size: 0.85rem; background: rgba(16, 185, 129, 0.1); color: var(--garage-color); padding: 0.35rem 0.75rem; border-radius: 99px; font-weight: 700; border: 1px solid rgba(16, 185, 129, 0.2);">
+            CALCULATING...
         </div>
     </div>
     
     <!-- MAP CONTAINER -->
     <div id="map" style="height: 450px; width: 100%; border-radius: 1.25rem; margin: 1.5rem 0; border: 1px solid var(--border-color); box-shadow: 0 10px 30px rgba(0,0,0,0.4); background: #1a1a1a;"></div>
     
-    {% if addresses %}
-    <div style="padding-left: 0; margin-bottom: 2.5rem;">
-        {% for step in addresses %}
-        <div class="card step-card" style="margin-bottom: 1rem; padding: 1.25rem; background: rgba(30, 41, 59, 0.4); border-left: 6px solid {% if step.rating == 'bust' %}var(--bust-color){% elif step.rating == 'great' %}var(--great-color){% elif forloop.first %}var(--garage-color){% elif forloop.last %}#f97316{% else %}var(--primary-color){% endif %}; {% if step.rating == 'great' %}box-shadow: 0 0 20px rgba(251, 191, 36, 0.1);{% endif %}; position: relative; overflow: hidden;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; z-index: 2; position: relative;">
-                <div style="flex: 1;">
-                    <div style="font-family: 'Outfit', sans-serif; font-size: 1.1rem; font-weight: 700; margin-bottom: 0.25rem;">
-                        {{ step.address }}
-                    </div>
-                </div>
-                
-                {% if user.is_authenticated and not forloop.first and not forloop.last %}
-                <div style="display: flex; gap: 0.25rem;" class="rating-controls" data-address="{{ step.address }}">
-                   <button type="button" class="btn-rate btn-great" data-rate="great" style="background:rgba(251, 191, 36, 0.1); border:none; cursor:pointer; padding: 0.4rem; border-radius: 6px; font-size: 1.2rem; opacity: {% if step.rating == 'great' %}1{% else %}0.3{% endif %}; transition: all 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="if('{{step.rating}}'!='great')this.style.opacity='0.3'" title="Mark as Great Find">⭐</button>
-                   <button type="button" class="btn-rate btn-bust" data-rate="bust" style="background:rgba(239, 68, 68, 0.1); border:none; cursor:pointer; padding: 0.4rem; border-radius: 6px; font-size: 1.2rem; opacity: {% if step.rating == 'bust' %}1{% else %}0.3{% endif %}; transition: all 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="if('{{step.rating}}'!='bust')this.style.opacity='0.3'" title="Mark as Bust">❌</button>
-                </div>
-                {% endif %}
-            </div>
-            
-            <div style="display: flex; flex-wrap: wrap; gap: 1.25rem; color: var(--text-muted); font-size: 0.85rem; font-weight: 600; text-transform: uppercase; margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 1rem;">
-                {% if forloop.first %}
-                <span style="color: var(--garage-color);">🏁 STARTING BASE</span>
-                {% elif forloop.last %}
-                <span style="color: #f97316;">🏡 RETURN HOME</span>
-                {% else %}
-                <span style="display: flex; align-items: center; gap: 0.35rem;"><span style="color: var(--primary-color);">🚗</span> {{ step.drive_time_str }} DRIVE</span>
-                {% endif %}
-                
-                <span style="display: flex; align-items: center; gap: 0.35rem;"><span>🕒</span> ARRIVE: <span style="color: white;">{{ step.arrival_time }}</span></span>
-                {% if not forloop.last %}
-                <span style="display: flex; align-items: center; gap: 0.35rem;"><span>⌛</span> DEPART: <span style="color: white;">{{ step.departure_time }}</span></span>
-                {% endif %}
-            </div>
+    <div id="route-loading-state" style="text-align: center; padding: 4rem 2rem;">
+        <div class="spinner" style="width: 3rem; height: 3rem; border-width: 4px; margin: 0 auto 1.5rem auto;"></div>
+        <h3 style="margin-bottom: 0.5rem; color: white;">Optimizing Your Morning...</h3>
+        <p style="color: var(--text-muted);">Solving the Traveling Salesman problem for your route.</p>
+    </div>
+
+    <div id="itinerary-container" style="display: none;">
+        <div id="itinerary-list" style="padding-left: 0; margin-bottom: 2.5rem;">
+            <!-- Steps will be injected here -->
         </div>
-        {% endfor %}
+        
+        <div id="navigation-links" style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 2rem;">
+            <!-- Nav links will be injected here -->
+        </div>
     </div>
     
-    {% if maps_urls %}
-    <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 2rem;">
-        {% for item in maps_urls %}
-        <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer" style="display: block; text-align: center; background: var(--primary-color); color: white; padding: 1rem; border-radius: 0.75rem; text-decoration: none; font-weight: 700; font-size: 1.1rem; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4); border: 1px solid rgba(255,255,255,0.1);">
-            🔗 Launch Navigation: {{ item.label }}
-        </a>
-        {% endfor %}
+    <div id="route-error" style="display: none; text-align: center; padding: 4rem 2rem;">
+        <div style="font-size: 3rem; margin-bottom: 1rem;">❌</div>
+        <h3 id="error-message">Route Generation Failed</h3>
+        <a href="{% url 'main' %}" style="display: inline-block; margin-top: 1.5rem; color: var(--primary-color);">Return to Route Planner</a>
     </div>
-    {% endif %}
-    {% else %}
-    <div class="empty-state">
-        <p>No results available for the current constraints.</p>
-    </div>
-    {% endif %}
 
     <div style="margin-top: 3rem; text-align: center;">
         <a href="{% url 'main' %}" style="color: var(--text-muted); text-decoration: none; font-weight: 600; font-size: 0.95rem;">&larr; SCRAP THE ITINERARY & START OVER</a>
@@ -70,129 +40,193 @@
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
-        document.querySelectorAll('.btn-rate').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                const targetRating = e.currentTarget.dataset.rate;
-                const container = e.currentTarget.closest('.rating-controls');
-                const address = container.dataset.address;
+let globalRouteData = null;
+let googleMapsLoaded = false;
+
+function onGoogleMapsReady() {
+    googleMapsLoaded = true;
+    if (globalRouteData) {
+        renderMap(globalRouteData);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', async function() {
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+
+    try {
+        const response = await fetch("{% url 'route_data' %}");
+        const data = await response.json();
+        
+        if (data.success) {
+            globalRouteData = data;
+            document.getElementById('route-loading-state').style.display = 'none';
+            document.getElementById('itinerary-container').style.display = 'block';
+            document.getElementById('route-status').innerText = 'ACTIVE ROUTE';
+            
+            renderItinerary(data.itinerary);
+            renderNavLinks(data.google_maps_urls);
+            
+            if (googleMapsLoaded) {
+                renderMap(data);
+            }
+        } else {
+            showError(data.error || 'Unknown error occurred during optimization.');
+        }
+    } catch (error) {
+        console.error('Error fetching route data:', error);
+        showError('Network error while calculating route.');
+    }
+});
+
+function showError(msg) {
+    document.getElementById('route-loading-state').style.display = 'none';
+    document.getElementById('route-error').style.display = 'block';
+    document.getElementById('error-message').innerText = msg;
+}
+
+function renderItinerary(itinerary) {
+    const list = document.getElementById('itinerary-list');
+    itinerary.forEach((step, index) => {
+        const card = document.createElement('div');
+        card.className = 'card step-card';
+        const isFirst = index === 0;
+        const isLast = index === itinerary.length - 1;
+        
+        let borderColor = 'var(--primary-color)';
+        if (step.rating === 'bust') borderColor = 'var(--bust-color)';
+        else if (step.rating === 'great') borderColor = 'var(--great-color)';
+        else if (isFirst) borderColor = 'var(--garage-color)';
+        else if (isLast) borderColor = '#f97316';
+
+        card.style.cssText = `margin-bottom: 1rem; padding: 1.25rem; background: rgba(30, 41, 59, 0.4); border-left: 6px solid ${borderColor}; position: relative; overflow: hidden;`;
+        
+        let metaHtml = '';
+        if (!isFirst && !isLast && (step.desc || step.tags.length > 0)) {
+            metaHtml = `
+                <details style="margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 0.75rem;">
+                    <summary style="font-size: 0.75rem; color: var(--primary-color); cursor: pointer; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">View Listing Details</summary>
+                    <div style="padding-top: 0.75rem;">
+                        ${step.title ? `<h4 style="margin: 0 0 0.5rem 0; font-size: 1rem;">${step.title}</h4>` : ''}
+                        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">${step.desc}</p>
+                        <div style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
+                            ${(step.tags || []).map(tag => `<span class="ai-tag" style="background: rgba(99, 102, 241, 0.1); color: var(--primary-color); font-size: 0.65rem; padding: 0.2rem 0.5rem; border-radius: 4px; border: 1px solid rgba(99, 102, 241, 0.2);">${tag}</span>`).join('')}
+                        </div>
+                        ${step.is_treasure ? `<p style="font-size: 0.75rem; color: #fbbf24; margin-top: 0.5rem;">✨ AI: ${step.treasure_reason}</p>` : ''}
+                        ${step.is_wishlist_match ? `<p style="font-size: 0.75rem; color: #10b981; margin-top: 0.25rem;">🎯 MATCH: ${step.match_reason}</p>` : ''}
+                    </div>
+                </details>
+            `;
+        }
+
+        card.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div style="flex: 1;">
+                    <div style="font-family: 'Outfit', sans-serif; font-size: 1.1rem; font-weight: 700; margin-bottom: 0.25rem;">
+                        ${step.address}
+                    </div>
+                </div>
+                ${(!isFirst && !isLast) ? `
+                <div style="display: flex; gap: 0.25rem;" class="rating-controls" data-address="${step.address}">
+                   <button type="button" class="btn-rate btn-great" onclick="toggleRating('${step.address}', 'great', this)" style="background:rgba(251, 191, 36, 0.1); border:none; cursor:pointer; padding: 0.4rem; border-radius: 6px; font-size: 1.2rem; opacity: ${step.rating === 'great' ? '1' : '0.3'};">⭐</button>
+                   <button type="button" class="btn-rate btn-bust" onclick="toggleRating('${step.address}', 'bust', this)" style="background:rgba(239, 68, 68, 0.1); border:none; cursor:pointer; padding: 0.4rem; border-radius: 6px; font-size: 1.2rem; opacity: ${step.rating === 'bust' ? '1' : '0.3'};">❌</button>
+                </div>` : ''}
+            </div>
+            
+            ${metaHtml}
+
+            <div style="display: flex; flex-wrap: wrap; gap: 1.25rem; color: var(--text-muted); font-size: 0.85rem; font-weight: 600; text-transform: uppercase; margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 1rem;">
+                ${isFirst ? '<span style="color: var(--garage-color);">🏁 STARTING BASE</span>' : 
+                  isLast ? '<span style="color: #f97316;">🏡 RETURN HOME</span>' : 
+                  `<span style="display: flex; align-items: center; gap: 0.35rem;"><span style="color: var(--primary-color);">🚗</span> ${step.drive_time_str} DRIVE</span>`}
                 
-                const isActive = e.currentTarget.style.opacity == "1";
-                const newRating = isActive ? 'neutral' : targetRating;
-                
-                try {
-                    const res = await fetch("{% url 'toggle_rating' %}", {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            "X-CSRFToken": csrfToken
-                        },
-                        body: JSON.stringify({ address: address, rating: newRating })
-                    });
-                    
-                    if (res.ok) {
-                        container.querySelector('.btn-great').style.opacity = (newRating == 'great') ? '1' : '0.3';
-                        container.querySelector('.btn-bust').style.opacity = (newRating == 'bust') ? '1' : '0.3';
-                    }
-                } catch(err) {
-                    console.error("Failed to sync rating", err);
-                }
-            });
+                <span style="display: flex; align-items: center; gap: 0.35rem;"><span>🕒</span> ARRIVE: <span style="color: white;">${step.arrival_time}</span></span>
+                ${!isLast ? `<span style="display: flex; align-items: center; gap: 0.35rem;"><span>⌛</span> DEPART: <span style="color: white;">${step.departure_time}</span></span>` : ''}
+            </div>
+        `;
+        list.appendChild(card);
+    });
+}
+
+function renderNavLinks(urls) {
+    const container = document.getElementById('navigation-links');
+    urls.forEach(url => {
+        const a = document.createElement('a');
+        a.href = url.url;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        a.style.cssText = 'display: block; text-align: center; background: var(--primary-color); color: white; padding: 1rem; border-radius: 0.75rem; text-decoration: none; font-weight: 700; font-size: 1.1rem; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4); border: 1px solid rgba(255,255,255,0.1);';
+        a.innerText = `🔗 Launch Navigation: ${url.label}`;
+        container.appendChild(a);
+    });
+}
+
+async function toggleRating(address, targetRating, btn) {
+    const isActive = btn.style.opacity === "1";
+    const newRating = isActive ? 'neutral' : targetRating;
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+
+    try {
+        const res = await fetch("{% url 'toggle_rating' %}", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken },
+            body: JSON.stringify({ address: address, rating: newRating })
         });
+        if (res.ok) {
+            const container = btn.closest('.rating-controls');
+            container.querySelector('.btn-great').style.opacity = (newRating === 'great') ? '1' : '0.3';
+            container.querySelector('.btn-bust').style.opacity = (newRating === 'bust') ? '1' : '0.3';
+        }
+    } catch(err) { console.error("Rating sync failed", err); }
+}
+
+function renderMap(data) {
+    const mapContainer = document.getElementById("map");
+    const map = new google.maps.Map(mapContainer, {
+        zoom: 12,
+        center: { lat: 37.0902, lng: -95.7129 },
+        styles: [
+            { "elementType": "geometry", "stylers": [{ "color": "#0f171c" }] },
+            { "elementType": "labels.text.stroke", "stylers": [{ "color": "#0f171c" }] },
+            { "elementType": "labels.text.fill", "stylers": [{ "color": "#746855" }] },
+            { "featureType": "administrative.locality", "elementType": "labels.text.fill", "stylers": [{ "color": "#d59563" }] },
+            { "featureType": "road", "elementType": "geometry", "stylers": [{ "color": "#1e293b" }] },
+            { "featureType": "water", "elementType": "geometry", "stylers": [{ "color": "#06090c" }] }
+        ]
+    });
+    
+    const directionsService = new google.maps.DirectionsService();
+    const directionsRenderer = new google.maps.DirectionsRenderer({
+        map: map,
+        suppressMarkers: true,
+        polylineOptions: { strokeColor: "#6366f1", strokeWeight: 6, strokeOpacity: 0.8 }
     });
 
-    function initMap() {
-        const map = new google.maps.Map(document.getElementById("map"), {
-            zoom: 12,
-            styles: [
-                { "elementType": "geometry", "stylers": [{ "color": "#0f171c" }] },
-                { "elementType": "labels.text.stroke", "stylers": [{ "color": "#0f171c" }] },
-                { "elementType": "labels.text.fill", "stylers": [{ "color": "#746855" }] },
-                { "featureType": "administrative.locality", "elementType": "labels.text.fill", "stylers": [{ "color": "#d59563" }] },
-                { "featureType": "poi", "elementType": "labels.text.fill", "stylers": [{ "color": "#d59563" }] },
-                { "featureType": "poi.park", "elementType": "geometry", "stylers": [{ "color": "#263c3f" }] },
-                { "featureType": "road", "elementType": "geometry", "stylers": [{ "color": "#1e293b" }] },
-                { "featureType": "road", "elementType": "geometry.stroke", "stylers": [{ "color": "#212a37" }] },
-                { "featureType": "water", "elementType": "geometry", "stylers": [{ "color": "#06090c" }] }
-            ]
-        });
-        
-        const directionsService = new google.maps.DirectionsService();
-        const directionsRenderer = new google.maps.DirectionsRenderer({
-            map: map,
-            suppressMarkers: true,
-            polylineOptions: {
-                strokeColor: "#6366f1",
-                strokeWeight: 6,
-                strokeOpacity: 0.8
-            }
-        });
-
-        const routeSteps = [
-            {% for step in addresses %}
-            {
-                address: "{{ step.address|escapejs }}",
-                rating: "{{ step.rating }}",
-                type: "{{ step.type|default:'garage' }}"
-            }{% if not forloop.last %},{% endif %}
-            {% endfor %}
-        ];
-        
-        const addresses = routeSteps.map(s => s.address);
-
-        if (addresses.length >= 2) {
-            const waypoints = [];
-            for (let i = 1; i < addresses.length - 1; i++) {
-                waypoints.push({
-                    location: addresses[i],
-                    stopover: true
+    const addresses = data.itinerary.map(s => s.address);
+    if (addresses.length >= 2) {
+        const waypoints = addresses.slice(1, -1).map(addr => ({ location: addr, stopover: true }));
+        directionsService.route({
+            origin: addresses[0],
+            destination: addresses[addresses.length - 1],
+            waypoints: waypoints,
+            travelMode: 'DRIVING'
+        }, function(result, status) {
+            if (status == 'OK') {
+                directionsRenderer.setDirections(result);
+                const route = result.routes[0];
+                let locations = [route.legs[0].start_location];
+                route.legs.forEach(leg => locations.push(leg.end_location));
+                
+                const markerBase = "http://maps.google.com/mapfiles/ms/icons/";
+                locations.forEach((latLng, i) => {
+                    const step = data.itinerary[i];
+                    let iconUrl = markerBase + (i === 0 || i === locations.length-1 ? "red-dot.png" : 
+                                  step.rating === 'great' ? "yellow-dot.png" : "blue-dot.png");
+                    new google.maps.Marker({ position: latLng, map: map, icon: iconUrl, animation: google.maps.Animation.DROP });
                 });
             }
-
-            directionsService.route({
-                origin: addresses[0],
-                destination: addresses[addresses.length - 1],
-                waypoints: waypoints,
-                travelMode: 'DRIVING'
-            }, function(result, status) {
-                if (status == 'OK') {
-                    directionsRenderer.setDirections(result);
-                    
-                    const route = result.routes[0];
-                    let locations = [route.legs[0].start_location];
-                    route.legs.forEach(leg => locations.push(leg.end_location));
-                    
-                    const markerBase = "http://maps.google.com/mapfiles/ms/icons/";
-                    
-                    locations.forEach((latLng, i) => {
-                        let stepData = routeSteps[i];
-                        let iconUrl = markerBase + "red-dot.png";
-                        
-                        if (stepData) {
-                            if (i === 0 || i === routeSteps.length - 1) {
-                                iconUrl = markerBase + "red-dot.png";
-                            } else if (stepData.rating === 'great') {
-                                iconUrl = markerBase + "yellow-dot.png";
-                            } else if (stepData.type === 'thrift') {
-                                iconUrl = markerBase + "purple-dot.png";
-                            } else {
-                                iconUrl = markerBase + "blue-dot.png";
-                            }
-                        }
-                        
-                        new google.maps.Marker({
-                            position: latLng,
-                            map: map,
-                            icon: iconUrl,
-                            animation: google.maps.Animation.DROP
-                        });
-                    });
-                    
-                }
-            });
-        }
+        });
     }
+}
 </script>
-<script async defer src="https://maps.googleapis.com/maps/api/js?key={{ api_key }}&callback=initMap"></script>
+<script async defer src="https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_MAPS_API_KEY }}&callback=onGoogleMapsReady"></script>
 {% endblock %}

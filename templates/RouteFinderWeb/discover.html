@@ -3,102 +3,261 @@
 {% block content %}
 <div class="card" style="padding: 1.5rem;">
     <div style="display: flex; gap: 0.5rem; margin-bottom: 2rem; background: rgba(0,0,0,0.2); padding: 0.4rem; border-radius: 0.75rem; border: 1px solid var(--border-color);">
-        <a href="{% url 'discover' %}?mode=garage{% if request.GET.zip_code %}&zip_code={{ request.GET.zip_code }}{% endif %}" style="flex: 1; text-align: center; text-decoration: none; padding: 0.75rem; border-radius: 0.5rem; font-weight: 700; font-size: 0.9rem; transition: all 0.2s ease; background-color: {% if mode == 'garage' or not mode %}var(--garage-color){% else %}transparent{% endif %}; color: {% if mode == 'garage' or not mode %}white{% else %}var(--text-muted){% endif %};">
+        <a href="{% url 'discover' %}?mode=garage{% if zip_code %}&zip_code={{ zip_code }}{% endif %}" style="flex: 1; text-align: center; text-decoration: none; padding: 0.75rem; border-radius: 0.5rem; font-weight: 700; font-size: 0.9rem; transition: all 0.2s ease; background-color: {% if mode == 'garage' or not mode %}var(--garage-color){% else %}transparent{% endif %}; color: {% if mode == 'garage' or not mode %}white{% else %}var(--text-muted){% endif %};">
             🏡 Garage Sales
         </a>
-        <a href="{% url 'discover' %}?mode=thrift{% if request.GET.zip_code %}&zip_code={{ request.GET.zip_code }}{% endif %}" style="flex: 1; text-align: center; text-decoration: none; padding: 0.75rem; border-radius: 0.5rem; font-weight: 700; font-size: 0.9rem; transition: all 0.2s ease; background-color: {% if mode == 'thrift' %}var(--thrift-color){% else %}transparent{% endif %}; color: {% if mode == 'thrift' %}white{% else %}var(--text-muted){% endif %};">
+        <a href="{% url 'discover' %}?mode=thrift{% if zip_code %}&zip_code={{ zip_code }}{% endif %}" style="flex: 1; text-align: center; text-decoration: none; padding: 0.75rem; border-radius: 0.5rem; font-weight: 700; font-size: 0.9rem; transition: all 0.2s ease; background-color: {% if mode == 'thrift' %}var(--thrift-color){% else %}transparent{% endif %}; color: {% if mode == 'thrift' %}white{% else %}var(--text-muted){% endif %};">
             🏬 Thrift Stores
         </a>
     </div>
 
-    <form method="get" action="{% url 'discover' %}" style="display: flex; gap: 0.75rem; align-items: stretch; margin-bottom: 1rem;">
+    {% if saved_intel_exists %}
+    <div style="margin-bottom: 2rem;">
+        <button type="button" id="load-vault-btn" style="background: linear-gradient(135deg, #1e293b, #0f172a); border: 1px solid var(--primary-color); box-shadow: 0 0 20px rgba(99, 102, 241, 0.2); display: flex; align-items: center; justify-content: center; gap: 0.75rem; padding: 1rem; border-radius: 0.75rem; color: var(--primary-color); font-weight: 800; letter-spacing: 0.05em; transition: all 0.2s ease; cursor: pointer; width: 100%;">
+            <span>📦 LOAD FROM THE VAULT</span>
+            <span style="font-size: 0.7rem; opacity: 0.6; font-weight: 400;">(Saved Intel Available)</span>
+        </button>
+    </div>
+    {% endif %}
+
+    <form id="search-form" method="get" action="{% url 'discover' %}" style="display: flex; gap: 0.75rem; align-items: stretch; margin-bottom: 1rem;">
         <input type="hidden" name="mode" value="{{ mode|default:'garage' }}">
+        <input type="hidden" id="refresh-flag" name="refresh" value="false">
         <div style="flex: 1; display: flex; gap: 0.5rem; flex-wrap: wrap;">
-            <input type="text" id="zip_code_input" name="zip_code" value="{{ request.GET.zip_code|default:'' }}" placeholder="Enter Zip Code (e.g. 90210)" style="margin-bottom: 0; padding: 0.85rem 1rem; flex: 2; min-width: 150px;">
+            <input type="text" id="zip_code_input" name="zip_code" value="{{ zip_code|default:'' }}" placeholder="Enter Zip Code (e.g. 90210)" style="margin-bottom: 0; padding: 0.85rem 1rem; flex: 2; min-width: 150px;">
             <select name="radius" style="margin-bottom: 0; flex: 1; min-width: 100px;">
-                <option value="5" {% if request.GET.radius == '5' %}selected{% endif %}>5 miles</option>
-                <option value="10" {% if request.GET.radius == '10' %}selected{% endif %}>10 miles</option>
-                <option value="15" {% if request.GET.radius == '15' or not request.GET.radius %}selected{% endif %}>15 miles</option>
-                <option value="30" {% if request.GET.radius == '30' %}selected{% endif %}>30 miles</option>
-                <option value="60" {% if request.GET.radius == '60' %}selected{% endif %}>60 miles</option>
+                <option value="5" {% if radius == '5' %}selected{% endif %}>5 miles</option>
+                <option value="10" {% if radius == '10' %}selected{% endif %}>10 miles</option>
+                <option value="15" {% if radius == '15' or not radius %}selected{% endif %}>15 miles</option>
+                <option value="30" {% if radius == '30' %}selected{% endif %}>30 miles</option>
+                <option value="60" {% if radius == '60' %}selected{% endif %}>60 miles</option>
             </select>
             <select name="sort" style="margin-bottom: 0; flex: 1; min-width: 130px; border-color: var(--primary-color);">
-                <option value="time" {% if request.GET.sort == 'time' or not request.GET.sort %}selected{% endif %}>🕒 Early First</option>
-                <option value="time_desc" {% if request.GET.sort == 'time_desc' %}selected{% endif %}>🕒 Late First</option>
-                <option value="title" {% if request.GET.sort == 'title' %}selected{% endif %}>🔤 Name A-Z</option>
+                <option value="time" {% if sort == 'time' or not sort %}selected{% endif %}>Early First</option>
+                <option value="time_desc" {% if sort == 'time_desc' %}selected{% endif %}>Late First</option>
+                <option value="title" {% if sort == 'title' %}selected{% endif %}>Name A-Z</option>
             </select>
             <button type="button" id="use-location-btn" style="width: auto; padding: 0 1.25rem; background: rgba(99, 102, 241, 0.1); color: var(--primary-color); border: 1px solid var(--primary-color); font-size: 0.85rem; font-weight: 700; white-space: nowrap; border-radius: 0.75rem; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; min-width: 140px;">
                 <span id="loc-btn-content">Use My Location</span>
             </button>
         </div>
-        <button type="submit" style="width: auto; padding: 0 1.5rem;">Search</button>
+        <button type="submit" onclick="document.getElementById('refresh-flag').value='true'" style="width: auto; padding: 0 1.5rem;">Search</button>
     </form>
 </div>
 
-{% if sales %}
-<form method="post" action="{% url 'discover' %}">
-    {% csrf_token %}
-    <input type="hidden" name="mode" value="{{ mode|default:'garage' }}">
-    <div style="display: grid; grid-template-columns: 1fr; gap: 1.5rem; margin-bottom: 3rem;">
-        {% for sale in sales %}
-        <div class="card sale-card" style="margin-bottom: 0; padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; border-left: 6px solid {% if sale.rating == 'bust' %}var(--bust-color){% elif sale.rating == 'great' %}var(--great-color){% else %}var(--primary-color){% endif %};">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <div style="flex: 1;">
-                    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.25rem;">
-                        <h3 style="font-size: 1.15rem; margin: 0;">{{ sale.title }}</h3>
-                        <button type="button" onclick="hideSale('{{ sale.address|escapejs }}', this)" title="Hide listing" style="background: rgba(239, 68, 68, 0.1); border: none; color: var(--bust-color); font-size: 0.65rem; cursor: pointer; font-weight: 800; width: 44px; height: 22px; display: flex; align-items: center; justify-content: center; border-radius: 4px; line-height: 1; letter-spacing: 0.05em; transition: all 0.2s; flex-shrink: 0;">HIDE</button>
-                        {% if "sale_test" in sale.id %}
-                        <span style="font-size: 0.65rem; padding: 0.15rem 0.4rem; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 4px; color: var(--text-muted); font-weight: 800; letter-spacing: 0.05em;">DEMO</span>
-                        {% endif %}
-                    </div>
-                    <p style="color: var(--text-muted); font-size: 0.9rem; font-weight: 600; margin: 0;">📍 {{ sale.address }}</p>
-                </div>
-                <div class="checkbox-wrapper" style="margin-left: 1.5rem;">
-                    <input type="checkbox" name="selected_sales" value="{{ sale.address }}" style="width: 1.75rem; height: 1.75rem; cursor: pointer; accent-color: var(--primary-color);">
-                </div>
-            </div>
-            
-            <p style="margin: 0.5rem 0; font-size: 0.95rem; line-height: 1.5; color: rgba(248, 250, 252, 0.8);">{{ sale.desc|truncatewords:40 }}</p>
-            
-            <div style="display: flex; gap: 1rem; align-items: center; justify-content: space-between; border-top: 1px solid var(--border-color); padding-top: 1rem; margin-top: 0.5rem;">
-                <div style="display: flex; gap: 1rem; align-items: center;">
-                    <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">🕒 {{ sale.time }}</span>
-                    <a href="{{ sale.source_url }}" target="_blank" rel="noopener noreferrer" style="font-size: 0.85rem; color: var(--primary-color); text-decoration: none; font-weight: 600;">View Details &rarr;</a>
-                </div>
-                {% if sale.rating != 'neutral' %}
-                <span style="padding: 0.25rem 0.75rem; border-radius: 99px; font-size: 0.75rem; font-weight: 800; background: {% if sale.rating == 'great' %}rgba(251, 191, 36, 0.15){% else %}rgba(239, 68, 68, 0.15){% endif %}; color: {% if sale.rating == 'great' %}var(--great-color){% else %}var(--bust-color){% endif %}; letter-spacing: 0.02em; border: 1px solid currentColor;">
-                   {{ sale.rating|upper }} HISTORY
-                </span>
-                {% endif %}
-            </div>
-        </div>
-        {% endfor %}
+{% if perform_search %}
+<div id="loading-state" style="text-align: center; padding: 6rem 2rem; background: rgba(30, 41, 59, 0.3); border-radius: 1.5rem; border: 1px solid var(--border-color); margin-top: 1rem;">
+    <!-- Dual Gear Animation -->
+    <div style="position: relative; width: 80px; height: 80px; margin: 0 auto 2.5rem auto;">
+        <svg style="position: absolute; top: 0; left: 0; width: 50px; height: 50px; color: var(--primary-color); animation: spin 4s linear infinite;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+        <svg style="position: absolute; bottom: 0; right: 0; width: 40px; height: 40px; color: var(--garage-color); animation: spin-reverse 3s linear infinite;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>
     </div>
-    
-    <div style="margin-bottom: 3rem;">
-        <div class="card" style="background: rgba(99,102,241,0.05); border-left: 5px solid var(--primary-color);">
-            <h3 style="margin-top: 0; color: white; font-size: 1.15rem;">Custom Addresses</h3>
-            <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.25rem;">Found an unlisted sale elsewhere? Add it manually here.</p>
-            <div id="custom-addresses-container" style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.25rem;">
-                <!-- dynamic inputs go here -->
-            </div>
-            <button type="button" id="addCustomBtn" style="background: transparent; border: 2px dashed var(--border-color); box-shadow: none; font-size: 0.9rem; color: var(--text-muted);">+ Add Unlisted Location</button>
-        </div>
+
+    <h3 id="loading-title" style="margin-bottom: 0.75rem; color: white; letter-spacing: 0.02em;">Initializing Scout...</h3>
+    <div style="max-width: 300px; margin: 0 auto; background: rgba(255,255,255,0.05); height: 4px; border-radius: 2px; overflow: hidden; margin-bottom: 1.5rem;">
+        <div id="loading-bar" style="width: 0%; height: 100%; background: linear-gradient(to right, var(--primary-color), var(--garage-color)); transition: width 0.5s ease;"></div>
     </div>
-    
-    <div style="text-align: right; background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(16px); padding: 1.5rem; border-top: 1px solid var(--border-color); position: sticky; bottom: 0; box-shadow: 0 -10px 30px rgba(0,0,0,0.5); border-radius: 1.5rem 1.5rem 0 0; margin: 0 -1.25rem;">
-        <input type="submit" value="Import to Route Planner" style="font-size: 1.1rem; padding: 1.1rem 2.5rem; background: linear-gradient(135deg, var(--primary-color), var(--primary-hover)); box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4); width: auto;">
-    </div>
-</form>
-{% elif form.is_bound %}
-<div class="card" style="text-align: center; padding: 4rem 2rem;">
-    <div style="font-size: 3rem; margin-bottom: 1rem;">🔎</div>
-    <h3 style="margin-bottom: 0.5rem;">No results found</h3>
-    <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Try a different zip code or search in another mode.</p> 
-    <a href="https://www.craigslist.org/search/gms?postal={{ request.GET.zip_code|default:'' }}&search_distance={{ request.GET.radius|default:'20' }}" target="_blank" rel="noopener noreferrer" style="display: inline-block; padding: 0.75rem 1.5rem; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 0.5rem; color: white; text-decoration: none; font-weight: 600; font-size: 0.9rem; transition: all 0.2s ease;">
-        🔍 Search Craigslist for this area
-    </a>
+    <p id="loading-status" style="color: var(--text-muted); font-size: 0.95rem; font-weight: 500;">Establishing connection to data source...</p>
 </div>
+
+<div id="results-container" style="display: none;">
+    <form method="post" action="{% url 'discover' %}">
+        {% csrf_token %}
+        <input type="hidden" name="mode" value="{{ mode|default:'garage' }}">
+        <div id="sales-grid" style="display: grid; grid-template-columns: 1fr; gap: 1.5rem; margin-bottom: 3rem;">
+            <!-- Sales cards will be injected here -->
+        </div>
+        
+        <div style="margin-bottom: 3rem;">
+            <div class="card" style="background: rgba(99,102,241,0.05); border-left: 5px solid var(--primary-color);">
+                <h3 style="margin-top: 0; color: white; font-size: 1.15rem;">Custom Addresses</h3>
+                <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.25rem;">Found an unlisted sale elsewhere? Add it manually here.</p>
+                <div id="custom-addresses-container" style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.25rem;">
+                    <!-- dynamic inputs go here -->
+                </div>
+                <button type="button" id="addCustomBtn" style="background: transparent; border: 2px dashed var(--border-color); box-shadow: none; font-size: 0.9rem; color: var(--text-muted);">+ Add Unlisted Location</button>
+            </div>
+        </div>
+        
+        <div class="sticky-actions" style="text-align: right; background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(16px); padding: 1.5rem; border-top: 1px solid var(--border-color); position: sticky; bottom: 0; box-shadow: 0 -10px 30px rgba(0,0,0,0.5); border-radius: 1.5rem 1.5rem 0 0; margin: 0 -1.25rem; z-index: 100;">
+            <input type="submit" value="Import to Route Planner" style="font-size: 1.1rem; padding: 1.1rem 2.5rem; background: linear-gradient(135deg, var(--primary-color), var(--primary-hover)); box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4); width: auto;">
+        </div>
+    </form>
+</div>
+
+<div id="no-results" style="display: none;">
+    <div class="card" style="text-align: center; padding: 4rem 2rem;">
+        <div style="font-size: 3rem; margin-bottom: 1rem;">🔎</div>
+        <h3 style="margin-bottom: 0.5rem;">No results found</h3>
+        <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Try a different zip code or search in another mode.</p> 
+        <a href="https://www.craigslist.org/search/gms?postal={{ zip_code }}&search_distance={{ radius|default:'20' }}" target="_blank" rel="noopener noreferrer" style="display: inline-block; padding: 0.75rem 1.5rem; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 0.5rem; color: white; text-decoration: none; font-weight: 600; font-size: 0.9rem; transition: all 0.2s ease;">
+            🔍 Search Craigslist for this area
+        </a>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const shouldSearch = "{{ perform_search }}";
+    if (shouldSearch !== "True") return;
+
+    const statusText = document.getElementById('loading-status');
+    const progressBar = document.getElementById('loading-bar');
+    const loadingTitle = document.getElementById('loading-title');
+    
+    // Support for 'The Vault' Loading (Must be before early return)
+    const vaultBtn = document.getElementById('load-vault-btn');
+    if (vaultBtn) {
+        vaultBtn.addEventListener('click', () => {
+            vaultBtn.innerHTML = '📂 ACCESSING THE VAULT...';
+            vaultBtn.style.opacity = '0.7';
+            vaultBtn.disabled = true;
+            
+            // Show loading state
+            document.getElementById('loading-state').style.display = 'block';
+            document.getElementById('loading-title').innerText = '📂 Vault Decryption';
+            
+            fetch(`{% url 'discovery_data' %}?mode=saved`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        processDiscoveryResults(data.sales);
+                    } else {
+                        alert('Vault Error: ' + data.error);
+                        window.location.reload();
+                    }
+                });
+        });
+    }
+
+    if (shouldSearch !== "True") return;
+
+    const statuses = [
+        { time: 0, text: "Pulling latest listings from data sources...", title: "📡 Data Scouring", progress: 10 },
+        { time: 2000, text: "Parsing addresses and sale times...", title: "🔍 Map Syncing", progress: 25 },
+        { time: 5000, text: "Gemma AI is analyzing descriptions for treasure...", title: "🧠 AI Analysis", progress: 45 },
+        { time: 10000, text: "Cross-referencing your personal wishlist...", title: "🎯 Match Hunting", progress: 70 },
+        { time: 15000, text: "Clustering community neighborhood events...", title: "📂 Finalizing Groups", progress: 90 }
+    ];
+
+    statuses.forEach(s => {
+        setTimeout(() => {
+            if (statusText && progressBar && loadingTitle) {
+                statusText.innerText = s.text;
+                loadingTitle.innerText = s.title;
+                progressBar.style.width = s.progress + "%";
+            }
+        }, s.time);
+    });
+
+    const params = new URLSearchParams(window.location.search);
+    fetch(`{% url 'discovery_data' %}?${params.toString()}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                processDiscoveryResults(data.sales);
+            } else {
+                document.getElementById('loading-state').innerHTML = `<h3 style="color: var(--bust-color);">Search Failed</h3><p>${data.error}</p>`;
+            }
+        });
+
+    function processDiscoveryResults(sales) {
+        const grid = document.getElementById('sales-grid');
+        document.getElementById('loading-state').style.display = 'none';
+        
+        if (sales && sales.length > 0) {
+                sales.forEach(sale => {
+                    const card = document.createElement('div');
+                    card.className = `card sale-card ${sale.is_bust_candidate ? 'bust-candidate' : ''}`;
+                    card.style.cssText = `margin-bottom: 0; padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; border-left: 6px solid ${
+                        sale.rating === 'bust' ? 'var(--bust-color)' : 
+                        sale.rating === 'great' ? 'var(--great-color)' : 'var(--primary-color)'
+                    };`;
+                    
+                    let badgesHtml = '';
+                    if (sale.is_in_planner) {
+                        badgesHtml += `<div class="wishlist-badge" style="background: rgba(99, 102, 241, 0.2); color: #818cf8; border-color: rgba(99, 102, 241, 0.3);">📍 ALREADY IN PLANNER</div>`;
+                    }
+                    if (sale.is_bust_candidate) {
+                        badgesHtml += `<span class="bust-warning-label" title="${sale.bust_reason}">⚠️ AI PREDICTION: Likely a Bust</span>`;
+                        if (sale.bust_reason) badgesHtml += `<p style="font-size: 0.75rem; color: var(--bust-color); margin-top: -0.25rem; margin-bottom: 0.5rem; font-style: italic;">"${sale.bust_reason}"</p>`;
+                    }
+                    if (sale.is_treasure) {
+                        badgesHtml += `<div class="treasure-badge" title="${sale.treasure_reason}">✨ TREASURE DETECTED</div>`;
+                        if (sale.treasure_reason) badgesHtml += `<p style="font-size: 0.75rem; color: #fbbf24; margin-top: -0.25rem; margin-bottom: 0.5rem; font-style: italic;">"${sale.treasure_reason}"</p>`;
+                    }
+                    if (sale.is_wishlist_match) {
+                        badgesHtml += `<div class="wishlist-badge" title="${sale.match_reason}">🎯 MATCH FOUND</div>`;
+                        if (sale.match_reason) badgesHtml += `<p style="font-size: 0.75rem; color: #10b981; margin-top: -0.25rem; margin-bottom: 0.5rem; font-style: italic;">"${sale.match_reason}"</p>`;
+                    }
+                    if (sale.is_community_event) {
+                        badgesHtml += `<div class="wishlist-badge" style="background: rgba(249, 115, 22, 0.2); color: #fb923c; border-color: rgba(249, 115, 22, 0.3);">🏘️ COMMUNITY EVENT</div>`;
+                    }
+                    if (sale.is_potential_duplicate) {
+                        if (sale.community_is_active) {
+                            badgesHtml += `<div class="wishlist-badge" style="background: rgba(239, 68, 68, 0.15); color: var(--bust-color); border-color: rgba(239, 68, 68, 0.2); font-size: 0.65rem; font-weight: 800;">⚠️ ALREADY VISITING THIS COMMUNITY</div>`;
+                            badgesHtml += `<p style="font-size: 0.7rem; color: var(--text-muted); margin-top: -0.25rem; margin-bottom: 0.5rem; font-style: italic;">One stop from ${sale.neighborhood_name} is enough for your route.</p>`;
+                        } else {
+                            badgesHtml += `<div class="wishlist-badge" style="background: rgba(148, 163, 184, 0.2); color: #94a3b8; border-color: rgba(148, 163, 184, 0.3); font-size: 0.6rem;">📂 ${sale.duplicate_count} LISTINGS IN ${sale.neighborhood_name.toUpperCase()}</div>`;
+                        }
+                    }
+
+                    if (sale.is_potential_goldmine) {
+                        badgesHtml += `<div class="wishlist-badge" style="background: rgba(167, 139, 250, 0.2); color: #c4b5fd; border-color: rgba(167, 139, 250, 0.3); font-weight: 800;">💎 POTENTIAL GOLDMINE</div>`;
+                    }
+                    if (sale.profit_rating && sale.profit_rating !== 'None') {
+                        badgesHtml += `<div class="wishlist-badge" style="background: rgba(251, 191, 36, 0.2); color: #fbbf24; border-color: rgba(251, 191, 36, 0.3); font-weight: 800;" title="${sale.profit_reason || ''}">💸 ${sale.profit_rating.toUpperCase()} PROFIT POTENTIAL</div>`;
+                    }
+                    if (sale.is_surge_potential) {
+                        badgesHtml += `<div class="wishlist-badge" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; border-color: rgba(56, 189, 248, 0.3); font-weight: 800;" title="Detected ${sale.surge_count} nearby moving sales recently. Probability of fresh donations is high.">🚀 RECENT DONATION SURGE</div>`;
+                    }
+
+                    let tagsHtml = '';
+                    if (sale.tags && sale.tags.length > 0) {
+                        tagsHtml = `<div style="display: flex; gap: 0.35rem; flex-wrap: wrap; margin-top: 0.25rem;">
+                            ${sale.tags.map(tag => `<span class="ai-tag">${tag}</span>`).join('')}
+                        </div>`;
+                    }
+
+                    const isDisabled = sale.is_in_planner || sale.community_is_active;
+                    const checkboxTitle = sale.is_in_planner ? 'Already in planner' : (sale.community_is_active ? `You already have a stop in ${sale.neighborhood_name}` : 'Add to route');
+
+                    card.innerHTML = `
+                        <div class="sale-card-header" style="display: flex; justify-content: space-between; align-items: flex-start;">
+                            <div style="flex: 1;">
+                                ${badgesHtml}
+                                <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.25rem; flex-wrap: wrap;">
+                                    <h3 style="font-size: 1.15rem; margin: 0; line-height: 1.2;">${sale.title}</h3>
+                                    <button type="button" onclick="hideSale('${sale.address}', this)" title="Hide listing" style="background: rgba(239, 68, 68, 0.1); border: none; color: var(--bust-color); font-size: 0.65rem; cursor: pointer; font-weight: 800; width: 44px; height: 22px; display: flex; align-items: center; justify-content: center; border-radius: 4px; line-height: 1; letter-spacing: 0.05em; transition: all 0.2s; flex-shrink: 0;">HIDE</button>
+                                </div>
+                                <p style="color: var(--text-muted); font-size: 0.9rem; font-weight: 600; margin: 0;">📍 ${sale.address}</p>
+                            </div>
+                            <div class="checkbox-wrapper" style="margin-left: 1.5rem;">
+                                <input type="checkbox" name="selected_sales" value="${sale.address}" title="${checkboxTitle}" style="width: 1.75rem; height: 1.75rem; cursor: ${isDisabled ? 'not-allowed' : 'pointer'}; accent-color: var(--primary-color); opacity: ${isDisabled ? '0.4' : '1'};" ${isDisabled ? 'disabled' : ''}>
+                            </div>
+                        </div>
+                        ${tagsHtml}
+                        <p style="margin: 0.5rem 0; font-size: 0.95rem; line-height: 1.5; color: rgba(248, 250, 252, 0.8);">${sale.desc || ''}</p>
+                        <div style="display: flex; gap: 1rem; align-items: center; justify-content: space-between; border-top: 1px solid var(--border-color); padding-top: 1rem; margin-top: 0.5rem;">
+                            <div style="display: flex; gap: 1rem; align-items: center;">
+                                <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">🕒 ${sale.time || ''}</span>
+                                <a href="${sale.source_url}" target="_blank" rel="noopener noreferrer" style="font-size: 0.85rem; color: var(--primary-color); text-decoration: none; font-weight: 600;">View Details &rarr;</a>
+                            </div>
+                            ${sale.rating !== 'neutral' ? `
+                            <span style="padding: 0.25rem 0.75rem; border-radius: 99px; font-size: 0.75rem; font-weight: 800; background: ${sale.rating === 'great' ? 'rgba(251, 191, 36, 0.15)' : 'rgba(239, 68, 68, 0.15)'}; color: ${sale.rating === 'great' ? 'var(--great-color)' : 'var(--bust-color)'}; letter-spacing: 0.02em; border: 1px solid currentColor;">
+                                ${sale.rating.toUpperCase()} HISTORY
+                            </span>` : ''}
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                });
+                document.getElementById('results-container').style.display = 'block';
+            } else {
+                document.getElementById('no-results').style.display = 'block';
+            }
+    }
+});
+</script>
 {% endif %}
 
 <script>
@@ -205,6 +364,9 @@
 <style>
     @keyframes spin {
         to { transform: rotate(360deg); }
+    }
+    @keyframes spin-reverse {
+        to { transform: rotate(-360deg); }
     }
     #use-location-btn:hover {
         background: var(--primary-color) !important;

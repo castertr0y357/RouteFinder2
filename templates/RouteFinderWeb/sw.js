@@ -1,9 +1,10 @@
+{% load static %}
 const CACHE_NAME = 'routefinder-v2';
 const ASSETS = [
   '/',
-  '/static/RouteFinderWeb/style.css',
-  '/static/icon.png',
-  '/static/manifest.json'
+  '{% static "RouteFinderWeb/style.css" %}',
+  '{% static "icon.png" %}',
+  '/manifest.json'
 ];
 
 // Install Event - Pre-cache critical assets

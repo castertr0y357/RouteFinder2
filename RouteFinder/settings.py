@@ -26,6 +26,9 @@ GOOGLE_MAPS_API_KEY = env('GOOGLE_MAPS_API_KEY', default='')
 
 DEBUG = env('DEBUG', default=True)
 
+OLLAMA_BASE_URL = env('OLLAMA_BASE_URL', default='http://host.docker.internal:11434')
+OLLAMA_MODEL = env('OLLAMA_MODEL', default='gemma:4b')
+
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['*'])
 
 INSTALLED_APPS = [
@@ -62,6 +65,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'RouteFinderWeb.context_processors.global_settings',
             ],
         },
     },

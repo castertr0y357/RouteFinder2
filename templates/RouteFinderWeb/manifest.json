@@ -1,3 +1,4 @@
+{% load static %}
 {
     "name": "RouteFinder 2.0",
     "short_name": "RouteFinder",
@@ -9,7 +10,7 @@
     "theme_color": "#0f171c",
     "icons": [
         {
-            "src": "icon.png",
+            "src": "{% static 'icon.png' %}",
             "sizes": "1024x1024",
             "type": "image/png",
             "purpose": "any maskable"
