@@ -30,6 +30,7 @@ OLLAMA_BASE_URL = env('OLLAMA_BASE_URL', default='http://host.docker.internal:11
 OLLAMA_MODEL = env('OLLAMA_MODEL', default='gemma:4b')
 
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['*'])
+CSRF_TRUSTED_ORIGINS = env.list('CSRF_TRUSTED_ORIGINS', default=[])
 
 INSTALLED_APPS = [
     'django.contrib.admin',

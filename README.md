@@ -43,6 +43,8 @@ RouteFinder 2.0 is a production-hardened, high-intensity scouting suite designed
     GOOGLE_MAPS_API_KEY=your_api_key_here
     DEFAULT_ADMIN_USER=admin
     DEFAULT_ADMIN_PASSWORD=your_secure_password
+    # Required for HTTPS production domains:
+    CSRF_TRUSTED_ORIGINS=https://your-domain.com
     ```
 
 3.  **Launch the Fleet**:
