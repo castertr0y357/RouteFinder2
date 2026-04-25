@@ -68,6 +68,7 @@
                 </nav>
             </div>
             <div class="auth-links" style="display: flex; align-items: center; font-size: 0.9rem;">
+                <button type="button" onclick="openBriefing()" style="background: rgba(255,255,255,0.05); color: var(--text-muted); border: 1px solid var(--border-color); padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.7rem; font-weight: 800; margin-right: 1.25rem; cursor: pointer; letter-spacing: 0.05em; transition: all 0.2s ease;">ℹ️ BRIEFING</button>
                 <button id="install-pwa-btn" onclick="installPWA()" style="display: none; background: var(--primary-color); color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.75rem; font-weight: 800; margin-right: 1.25rem; cursor: pointer; letter-spacing: 0.05em; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);">📲 INSTALL APP</button>
                 <div id="ios-install-tip" style="display: none; background: rgba(255,255,255,0.05); color: var(--text-muted); padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.7rem; font-weight: 600; margin-right: 1.25rem; border: 1px solid var(--border-color); cursor: help;" title="Tap 'Share' and then 'Add to Home Screen' to install.">📲 iOS: TAP SHARE &rarr; [+]</div>
                 {% if not google_maps_api_key and user.is_superuser %}
@@ -111,5 +112,91 @@
             <p style="margin: 0; opacity: 0.7;">&copy; {% now "Y" %} RouteFinder. The Ultimate Garage Sale Intelligence Suite.</p>
         </div>
     </footer>
+    <!-- Tactical Briefing Modal -->
+    <div id="briefing-modal" style="display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(2, 6, 23, 0.9); backdrop-filter: blur(12px); align-items: center; justify-content: center; padding: 1.5rem;">
+        <div class="card" style="max-width: 600px; width: 100%; padding: 2.5rem; border: 1px solid var(--border-color); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); position: relative; background: #0f172a;">
+            <button onclick="closeBriefing()" style="position: absolute; top: 1.5rem; right: 1.5rem; background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer;">&times;</button>
+            
+            <div id="briefing-content">
+                <!-- Step 1: Welcome -->
+                <div class="briefing-step" id="step-1">
+                    <h2 style="font-size: 2rem; margin-bottom: 1rem; color: var(--primary-color);">🛰️ Mission Briefing</h2>
+                    <p style="font-size: 1.1rem; line-height: 1.6; color: var(--text-muted); margin-bottom: 2rem;">Welcome to <strong>RouteFinder 2.0</strong>. You've just been deployed with the most advanced scouting engine on the market. Let's get you combat-ready.</p>
+                    <div style="display: flex; justify-content: flex-end;">
+                        <button onclick="nextBriefingStep(2)" style="padding: 0.75rem 2rem; background: var(--primary-color); border: none; color: white; border-radius: 8px; font-weight: 800; cursor: pointer;">NEXT &rarr;</button>
+                    </div>
+                </div>
+
+                <!-- Step 2: Discovery -->
+                <div class="briefing-step" id="step-2" style="display: none;">
+                    <h2 style="font-size: 1.75rem; margin-bottom: 1rem; color: var(--primary-color);">📡 Phase 1: Discovery</h2>
+                    <p style="margin-bottom: 1.5rem; line-height: 1.5;">Enter your <strong>Zip Code</strong> and <strong>Radius</strong> to begin a sweep. Toggle between <strong>Garage Sales</strong> and <strong>Thrift Stores</strong> depending on your mission objective.</p>
+                    <ul style="list-style: none; padding: 0; margin-bottom: 2rem;">
+                        <li style="margin-bottom: 0.75rem; color: var(--text-muted);">✔️ <strong>Real-time Scraping</strong>: Pulls the latest data instantly.</li>
+                        <li style="margin-bottom: 0.75rem; color: var(--text-muted);">✔️ <strong>The Vault</strong>: Save your Friday night scout and load it instantly on Saturday morning.</li>
+                    </ul>
+                    <div style="display: flex; justify-content: space-between;">
+                        <button onclick="nextBriefingStep(1)" style="background: none; border: 1px solid var(--border-color); color: var(--text-muted); padding: 0.75rem 1.5rem; border-radius: 8px; cursor: pointer;">BACK</button>
+                        <button onclick="nextBriefingStep(3)" style="padding: 0.75rem 2rem; background: var(--primary-color); border: none; color: white; border-radius: 8px; font-weight: 800; cursor: pointer;">NEXT &rarr;</button>
+                    </div>
+                </div>
+
+                <!-- Step 3: Intelligence -->
+                <div class="briefing-step" id="step-3" style="display: none;">
+                    <h2 style="font-size: 1.75rem; margin-bottom: 1rem; color: var(--primary-color);">🧠 Phase 2: Intelligence</h2>
+                    <p style="margin-bottom: 1.5rem;">Our AI analyzes descriptions to find what others miss. Look for these tactical badges:</p>
+                    <div style="display: grid; gap: 1rem; margin-bottom: 2rem;">
+                        <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid var(--bust-color); padding: 0.75rem; border-radius: 8px; font-size: 0.85rem;">
+                            <strong style="color: var(--bust-color);">⚠️ BUST CANDIDATE</strong>: AI predicts this listing might be a waste of time.
+                        </div>
+                        <div style="background: rgba(251, 191, 36, 0.1); border: 1px solid #fbbf24; padding: 0.75rem; border-radius: 8px; font-size: 0.85rem;">
+                            <strong style="color: #fbbf24;">✨ TREASURE DETECTED</strong>: High-value items found in description.
+                        </div>
+                        <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid #10b981; padding: 0.75rem; border-radius: 8px; font-size: 0.85rem;">
+                            <strong style="color: #10b981;">🎯 MATCH FOUND</strong>: This listing matches your personal wishlist items!
+                        </div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <button onclick="nextBriefingStep(2)" style="background: none; border: 1px solid var(--border-color); color: var(--text-muted); padding: 0.75rem 1.5rem; border-radius: 8px; cursor: pointer;">BACK</button>
+                        <button onclick="nextBriefingStep(4)" style="padding: 0.75rem 2rem; background: var(--primary-color); border: none; color: white; border-radius: 8px; font-weight: 800; cursor: pointer;">NEXT &rarr;</button>
+                    </div>
+                </div>
+
+                <!-- Step 4: Execution -->
+                <div class="briefing-step" id="step-4" style="display: none;">
+                    <h2 style="font-size: 1.75rem; margin-bottom: 1rem; color: var(--primary-color);">🏁 Phase 3: Execution</h2>
+                    <p style="margin-bottom: 1.5rem;">Select your targets and click <strong>IMPORT</strong>. Our Tactical Route Solver will calculate the most efficient path, accounting for travel time and stop duration.</p>
+                    <p style="margin-bottom: 2rem; color: var(--text-muted);">Ready to start the hunt?</p>
+                    <div style="display: flex; justify-content: space-between;">
+                        <button onclick="nextBriefingStep(3)" style="background: none; border: 1px solid var(--border-color); color: var(--text-muted); padding: 0.75rem 1.5rem; border-radius: 8px; cursor: pointer;">BACK</button>
+                        <button onclick="closeBriefing()" style="padding: 0.75rem 2rem; background: linear-gradient(135deg, #10b981, #059669); border: none; color: white; border-radius: 8px; font-weight: 800; cursor: pointer;">DISMISS & BEGIN</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openBriefing() {
+            document.getElementById('briefing-modal').style.display = 'flex';
+            nextBriefingStep(1);
+        }
+        function closeBriefing() {
+            document.getElementById('briefing-modal').style.display = 'none';
+            localStorage.setItem('briefingCompleted', 'true');
+        }
+        function nextBriefingStep(stepNum) {
+            document.querySelectorAll('.briefing-step').forEach(s => s.style.display = 'none');
+            const targetStep = document.getElementById('step-' + stepNum);
+            if (targetStep) targetStep.style.display = 'block';
+        }
+
+        // Auto-show for new users
+        window.addEventListener('load', () => {
+            if (!localStorage.getItem('briefingCompleted')) {
+                setTimeout(openBriefing, 1000);
+            }
+        });
+    </script>
 </body>
 </html>

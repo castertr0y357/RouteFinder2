@@ -315,7 +315,9 @@ def scrape_thrift_stores(zip_code, api_key):
     try:
         gmaps = googlemaps.Client(key=api_key)
         places_result = gmaps.places(query=f"thrift store in {zip_code}")
-        
+        if not places_result:
+            return []
+            
         base_results = places_result.get('results', [])[:10] # Limit to top 10 for performance
         stores = []
         

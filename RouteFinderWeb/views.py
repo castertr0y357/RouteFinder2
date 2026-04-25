@@ -446,12 +446,16 @@ class DiscoveryDataView(LoginRequiredMixin, View):
                     logger.error(f"Surge Engine Error: {se}")
                     moving_sales_count = 0
 
-                if sales:
-                    ai = AIService()
-                    thrift_analysis = ai.analyze_thrift_batch(sales)
-                    for i, s in enumerate(sales):
-                        if i < len(thrift_analysis):
-                            analysis = thrift_analysis[i]
+                    if sales:
+                        ai = AIService()
+                        try:
+                            thrift_analysis = ai.analyze_thrift_batch(sales)
+                        except Exception as ai_err:
+                            logger.error(f"AI Thrift Batch Analysis failed: {ai_err}")
+                            thrift_analysis = []
+                            
+                        for i, s in enumerate(sales):
+                            analysis = thrift_analysis[i] if i < len(thrift_analysis) else {}
                             s['tags'] = analysis.get('tags', [])
                             s['is_potential_goldmine'] = analysis.get('is_potential_goldmine', False)
                             s['profit_rating'] = analysis.get('profit_rating', 'None')
@@ -491,28 +495,30 @@ class DiscoveryDataView(LoginRequiredMixin, View):
                     
                     # Batch analyze garage sales
                     descriptions = [s.get('desc', '') for s in sales if isinstance(s, dict)]
-                    ai_analysis = ai.analyze_listings_batch(descriptions, bust_history=bust_history, wishlist=wishlist)
+                    try:
+                        ai_analysis = ai.analyze_listings_batch(descriptions, bust_history=bust_history, wishlist=wishlist)
+                    except Exception as ai_err:
+                        logger.error(f"AI Garage Batch Analysis failed: {ai_err}")
+                        ai_analysis = []
                     
                     for i, s in enumerate(sales):
-                        if i < len(ai_analysis):
-                            analysis = ai_analysis[i]
-                            s['tags'] = analysis.get('tags', [])
-                            s['is_treasure'] = analysis.get('is_treasure', False)
-                            s['treasure_reason'] = analysis.get('treasure_reason', "")
-                            s['is_bust_candidate'] = analysis.get('is_bust_candidate', False)
-                            s['bust_reason'] = analysis.get('bust_reason', "")
-                            s['is_wishlist_match'] = analysis.get('is_wishlist_match', False)
-                            s['match_reason'] = analysis.get('match_reason', "")
-                            s['is_potential_goldmine'] = analysis.get('is_potential_goldmine', False)
-                            s['profit_rating'] = analysis.get('profit_rating', 'None')
-                            s['is_moving_sale'] = analysis.get('is_moving_sale', False)
-                            
-                            title_lower = s.get('title', '').lower()
-                            if any(word in title_lower for word in ['community', 'subdivision', 'sub-division', 'neighborhood']):
-                                s['is_bust_candidate'] = False
-                                s['is_community_event'] = True
-                            else:
-                                s['is_community_event'] = False
+                        analysis = ai_analysis[i] if i < len(ai_analysis) else {}
+                        s['tags'] = analysis.get('tags', [])
+                        s['is_treasure'] = analysis.get('is_treasure', False)
+                        s['treasure_reason'] = analysis.get('treasure_reason', "")
+                        s['is_bust_candidate'] = analysis.get('is_bust_candidate', False)
+                        s['bust_reason'] = analysis.get('bust_reason', "")
+                        s['is_wishlist_match'] = analysis.get('is_wishlist_match', False)
+                        s['match_reason'] = analysis.get('match_reason', "")
+                        s['is_potential_goldmine'] = analysis.get('is_potential_goldmine', False)
+                        s['profit_rating'] = analysis.get('profit_rating', 'None')
+                        s['is_moving_sale'] = analysis.get('is_moving_sale', False)
+                        title_lower = s.get('title', '').lower()
+                        if any(word in title_lower for word in ['community', 'subdivision', 'sub-division', 'neighborhood']):
+                            s['is_bust_candidate'] = False
+                            s['is_community_event'] = True
+                        else:
+                            s['is_community_event'] = False
 
                     # AI Clustering
                     ai_clusters = ai.cluster_neighborhoods([s.get('title', '') for s in sales])

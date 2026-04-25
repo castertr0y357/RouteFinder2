@@ -1,71 +1,70 @@
-# RouteFinder 2.0: The Nocturnal Navigator 🗺️🧠
+# 🛰️ RouteFinder 2.0: The Nocturnal Navigator
+### Tactical AI-Powered Garage Sale Scouting & Routing Suite
 
-RouteFinder 2.0 is a professional-grade, AI-powered tactical scouting suite for the modern explorer. No longer just a mapping tool, the **Nocturnal Navigator** uses local Large Language Models (LLMs) and predictive analytics to identify high-value resale opportunities before you even leave your driveway.
-
-![Mission Control UI](file:///C:/Users/caste/.gemini/antigravity/brain/06949b7a-1c13-4e52-a150-38485bd07d4e/media__1777069589337.png)
-
----
-
-## 🧠 The AI Scouting Engine (Powered by Gemma)
-At the heart of RouteFinder 2.0 is a local **Ollama** integration running **Gemma:4b**. Every listing you discover is subjected to a deep tactical scan:
-
-- **💎 Hidden Goldmine Detection**: AI identifies short, vague descriptions in high-affluence zip codes—the hallmark of "unpicked" estate gems.
-- **💸 Arbitrage & Profit Scouting**: Automatically flags mentions of high-resale brands (Nikon, Le Creuset, Power Tools) with **PROFIT POTENTIAL** badges.
-- **🎯 Wishlist Matchmaking**: Scans every listing against your personal "Looking For" list and highlights matches with surgical precision.
-- **📂 Intelligent Neighborhood Clustering**: Semantically groups community-wide sales to prevent redundant stops and maximize your time-on-ground.
-
-## 🚀 Donation Surge Predictive Engine
-RouteFinder 2.0 introduces the **Donation Surge Proxy**, a first-of-its-kind predictive tool for thrift shoppers:
-- **The Logic**: The system cross-references local garage sale activity with nearby thrift stores.
-- **The Trigger**: If a cluster of **"Moving" or "Downsizing"** sales is detected in a zip code, local thrift stores are flagged with a **🚀 RECENT DONATION SURGE** badge.
-- **The Advantage**: You'll know exactly which stores just received a high-volume influx of fresh, quality donations.
-
-## 💎 Tactical Badge System (HUD)
-Your discovery grid is enriched with high-intensity visual badges:
-- **🚀 RECENT DONATION SURGE**: High probability of fresh thrift inventory.
-- **💸 PROFIT POTENTIAL**: High-resale items detected by AI.
-- **💎 POTENTIAL GOLDMINE**: High-end area with unvetted descriptions.
-- **🔒 COMMUNITY LOCK**: Prevents double-booking stops at the same neighborhood event.
-- **⚠️ BUST HISTORY**: Alerts you if an address was a "bust" in the past.
+RouteFinder 2.0 is a production-hardened, high-intensity scouting suite designed for serious treasure hunters. It combines real-time data scraping, Gemma-powered AI analysis, and tactical route optimization into a single, mobile-ready interface.
 
 ---
 
-## ✨ Premium Core Features
-- **Multi-Mode Discovery**: Pivot instantly between **Garage Sale** listings and **Thrift Store** storefronts.
-- **Intelligent TSP Routing**: Automated route calculation with support for **Manual Priorities**. Fix certain stops while the engine optimizes the rest.
-- **"Mission Control" UI**: A premium, high-contrast dark-mode interface with glassmorphism effects and mechanical dual-gear loading animations.
-- **Progressive Web App (PWA)**: Install directly to your iOS or Android home screen for a full-screen, native-app experience.
+## 🛠️ Tactical Features
+
+### 📡 1. Strategic Discovery
+*   **Real-Time Scouring**: Deep-scrapes multiple data sources for garage sales and estate auctions.
+*   **Thrift Recon**: Integrated Google Places intelligence to locate and analyze thrift stores, including real-time "Donation Surge" probability detection.
+*   **The Vault (Saved Intel)**: Persistence layer that allows you to scout on Friday night and instantly load your mission on Saturday morning across any device.
+
+### 🧠 2. AI Intelligence Engine
+*   **Tactical Badging**: Gemma AI analyzes listing descriptions to identify high-value targets.
+    *   ⚠️ **BUST CANDIDATE**: AI identifies probable waste-of-time listings based on keywords and history.
+    *   ✨ **TREASURE DETECTED**: Highlights rare items, antiques, or high-value electronics.
+    *   🎯 **MATCH FOUND**: Cross-references listings against your personal **Wishlist**.
+*   **Community Clustering**: Automatically identifies neighborhood-wide events and multi-family sales.
+
+### 🏁 3. Precision Execution
+*   **Tactical Route Solver**: Optimizes your route for maximum efficiency, minimizing drive time and maximizing "Booty Per Hour" (BPH).
+*   **Mobile "Tactical Stack"**: Responsive UI designed for one-handed operation in the field, with high-contrast night mode support.
+
+### 📱 4. Progressive Web App (PWA)
+*   **Native Experience**: Installable on iOS and Android for a full-screen, standalone experience.
+*   **Network-First Resilience**: Optimized caching ensures the app remains responsive even in low-signal cellular dead zones.
 
 ---
 
-## 🚀 Setup Instructions
+## 🚀 Quick Deployment (Docker)
 
-### 1. Prerequisites
-- [Docker & Docker Compose](https://docs.docker.com/get-docker/)
-- [Ollama](https://ollama.ai/) installed and running locally with `gemma:4b` pulled.
-- [Google Maps API Key](https://console.cloud.google.com/google/maps-apis/credentials) with **Directions**, **Distance Matrix**, and **Places** APIs enabled.
+1.  **Clone the Repository**:
+    ```bash
+    git clone https://github.com/castertr0y357/RouteFinder2.git
+    cd RouteFinder2
+    ```
 
-### 2. Launch the Tactical Stack
-RouteFinder is fully orchestrated. A single command handles the database, migrations, and superuser injection:
-```bash
-docker-compose up --build
-```
-Access the dashboard at `http://localhost:8000`.
+2.  **Configure Environment**:
+    Create a `.env` file based on the provided examples:
+    ```env
+    GOOGLE_MAPS_API_KEY=your_api_key_here
+    DEFAULT_ADMIN_USER=admin
+    DEFAULT_ADMIN_PASSWORD=your_secure_password
+    ```
+
+3.  **Launch the Fleet**:
+    ```bash
+    docker compose up -d --build
+    ```
+
+4.  **Access the Bridge**:
+    Navigate to `http://localhost:8000` (or your server's IP).
+
+---
+
+## 📱 Mobile Installation
+
+*   **Android (Chrome)**: Tap the **📲 INSTALL APP** button in the header or select "Add to Home Screen" from the Chrome menu.
+*   **iOS (Safari)**: Tap the **Share** icon (square with up arrow) and select **"Add to Home Screen"**.
 
 ---
 
-## 💻 Technical Hardening
-RouteFinder 2.0 is built for stability and speed:
-- **Hardened Scraper Session**: Parallel, connection-pooled scrapers with automatic retries and browser-spoofing headers.
-- **Gunicorn 120s Timeout**: Optimized for heavy AI scouting missions.
-- **Chunked AI Processing**: Massive result sets are analyzed in focused batches to maintain LLM accuracy and prevent context exhaustion.
-- **Postgres Backbone**: Professional-grade data persistence for your ratings and history.
+## ℹ️ Tactical Briefing
+New to the suite? Click the **ℹ️ BRIEFING** button in the header for a guided tour of the Discovery, Intelligence, and Execution phases.
 
 ---
 
-## 🔒 Administrative Lockdown
-- **Administrative Gate**: Protect your Google Maps quota with a mandatory login.
-- **Manual Approvals**: New user registrations must be approved by the `/admin` to prevent unauthorized access.
-
----
-*Developed for explorers who demand superior intel.* 🛰️🗺️
+*Developed with ❤️ for the elite scouting community.*
