@@ -455,7 +455,7 @@ class DiscoveryDataView(LoginRequiredMixin, View):
                             thrift_analysis = []
                             
                         for i, s in enumerate(sales):
-                            analysis = thrift_analysis[i] if i < len(thrift_analysis) else {}
+                            analysis = thrift_analysis[i] if (i < len(thrift_analysis) and thrift_analysis[i]) else {}
                             s['tags'] = analysis.get('tags', [])
                             s['is_potential_goldmine'] = analysis.get('is_potential_goldmine', False)
                             s['profit_rating'] = analysis.get('profit_rating', 'None')
@@ -502,7 +502,7 @@ class DiscoveryDataView(LoginRequiredMixin, View):
                         ai_analysis = []
                     
                     for i, s in enumerate(sales):
-                        analysis = ai_analysis[i] if i < len(ai_analysis) else {}
+                        analysis = ai_analysis[i] if (i < len(ai_analysis) and ai_analysis[i]) else {}
                         s['tags'] = analysis.get('tags', [])
                         s['is_treasure'] = analysis.get('is_treasure', False)
                         s['treasure_reason'] = analysis.get('treasure_reason', "")

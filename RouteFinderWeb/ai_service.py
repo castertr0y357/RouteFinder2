@@ -61,8 +61,20 @@ class AIService:
                     prompt += f"{j+1}. {s['title']} at {s['address']}\n"
                 
                 analysis = self._call_ollama(prompt, timeout=40)
+                
+                # Hardening: Filter out non-dict items
+                if isinstance(analysis, list):
+                    analysis = [item for item in analysis if isinstance(item, dict)]
+                else:
+                    analysis = []
+                    
                 while len(analysis) < len(chunk):
-                    analysis.append({"tags": ["#Thrift"], "is_potential_goldmine": False, "profit_rating": "None"})
+                    analysis.append({
+                        "tags": ["#Thrift"], 
+                        "is_potential_goldmine": False, 
+                        "profit_rating": "None",
+                        "profit_reason": ""
+                    })
                 return analysis[:len(chunk)]
             
             future_results = list(executor.map(process_chunk, chunks))
@@ -101,7 +113,12 @@ class AIService:
                 
                 analysis = self._call_ollama(prompt, timeout=50)
                 
-                # Clean and Pad
+                # Clean and Pad (Hardening: Filter out non-dict items)
+                if isinstance(analysis, list):
+                    analysis = [item for item in analysis if isinstance(item, dict)]
+                else:
+                    analysis = []
+                    
                 for item in analysis:
                     if 'tags' in item and isinstance(item['tags'], str):
                         item['tags'] = [t.strip() for t in item['tags'].split(',')]
@@ -110,7 +127,8 @@ class AIService:
                     analysis.append({
                         "tags": [], "is_treasure": False, "is_bust_candidate": False,
                         "is_wishlist_match": False, "is_moving_sale": False, 
-                        "is_potential_goldmine": False, "profit_rating": "None"
+                        "is_potential_goldmine": False, "profit_rating": "None",
+                        "treasure_reason": "", "bust_reason": "", "match_reason": "", "profit_reason": ""
                     })
                 return analysis[:len(chunk)]
 
