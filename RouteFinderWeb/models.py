@@ -14,6 +14,9 @@ class UserProfile(models.Model):
     
     # AI Discovery Preferences
     looking_for = models.TextField(blank=True, help_text="Comma-separated items you are looking for (e.g. 'Vintage Pyrex, Gameboy')")
+    ai_enabled = models.BooleanField(default=True, help_text="Toggle all AI functionalities in the application")
+    ai_thinking_enabled = models.BooleanField(default=False, help_text="Toggle AI thinking/reasoning")
+    ai_thinking_effort = models.IntegerField(default=50, help_text="Adjust thinking effort (1-100)")
 
     def __str__(self):
         return f"{self.user.username}'s Profile"

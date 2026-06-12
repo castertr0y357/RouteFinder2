@@ -68,6 +68,8 @@
         let is_wishlist_match = "false";
         let match_reason = "";
 
+        let is_community_event = "false";
+        
         if (typeof itemData === 'string') {
             addressValue = itemData;
         } else {
@@ -81,6 +83,7 @@
             treasure_reason = itemData.treasure_reason || "";
             is_wishlist_match = itemData.is_wishlist_match ? "true" : "false";
             match_reason = itemData.match_reason || "";
+            is_community_event = itemData.is_community_event ? "true" : "false";
         }
 
         const row = document.createElement('div');
@@ -99,6 +102,7 @@
                <input type="hidden" name="treasure_reason[]" value="${treasure_reason.replace(/"/g, '&quot;')}">
                <input type="hidden" name="is_wishlist_match[]" value="${is_wishlist_match}">
                <input type="hidden" name="match_reason[]" value="${match_reason.replace(/"/g, '&quot;')}">
+               <input type="hidden" name="is_community_event[]" value="${is_community_event}">
             </div>
             <input type="number" name="priority[]" value="${priorityValue}" min="0" style="width: 70px; text-align: center; margin-bottom: 0; font-weight: 700;">
             <button type="button" onclick="removeAddress('${addressValue.replace(/"/g, '&quot;')}', this.parentElement)" style="background: rgba(239, 68, 68, 0.1); color: var(--bust-color); width: 45px; padding: 0.5rem; border-radius: 0.75rem; box-shadow: none; font-size: 1.25rem;">&times;</button>

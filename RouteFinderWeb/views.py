@@ -106,6 +106,7 @@ class MainView(LoginRequiredMixin, View):
         treasure_reasons = request.POST.getlist('treasure_reason[]')
         is_wishlist_matches = request.POST.getlist('is_wishlist_match[]')
         match_reasons = request.POST.getlist('match_reason[]')
+        is_community_events = request.POST.getlist('is_community_event[]')
         
         destinations = []
         for i in range(len(addresses)):
@@ -131,7 +132,8 @@ class MainView(LoginRequiredMixin, View):
                     'is_treasure': is_treasures[i] == 'true' if i < len(is_treasures) else False,
                     'treasure_reason': treasure_reasons[i] if i < len(treasure_reasons) else '',
                     'is_wishlist_match': is_wishlist_matches[i] == 'true' if i < len(is_wishlist_matches) else False,
-                    'match_reason': match_reasons[i] if i < len(match_reasons) else ''
+                    'match_reason': match_reasons[i] if i < len(match_reasons) else '',
+                    'is_community_event': is_community_events[i] == 'true' if i < len(is_community_events) else False
                 })
                 
         request.session['start_address'] = start_address
@@ -214,7 +216,8 @@ class RouteDataView(LoginRequiredMixin, View):
                 arrival_str = current_time.strftime("%I:%M %p")
                 
                 # Stop
-                current_time += datetime.timedelta(minutes=stop_mins)
+                duration = stop_mins * 3 if meta.get('is_community_event') else stop_mins
+                current_time += datetime.timedelta(minutes=duration)
                 departure_str = current_time.strftime("%I:%M %p")
                 
                 final_itinerary.append({
@@ -318,7 +321,8 @@ class SaleDiscoveryView(LoginRequiredMixin, View):
             'sort': sort_mode,
             'perform_search': bool(zip_code and refresh),
             'saved_intel_exists': saved_intel_exists,
-            'is_authenticated': request.user.is_authenticated
+            'is_authenticated': request.user.is_authenticated,
+            'GOOGLE_MAPS_API_KEY': getattr(settings, 'GOOGLE_MAPS_API_KEY', '')
         }
         return render(request, self.template_name, context)
 
@@ -358,7 +362,8 @@ class SaleDiscoveryView(LoginRequiredMixin, View):
                         'is_treasure': metadata.get('is_treasure', False),
                         'treasure_reason': metadata.get('treasure_reason', ''),
                         'is_wishlist_match': metadata.get('is_wishlist_match', False),
-                        'match_reason': metadata.get('match_reason', '')
+                        'match_reason': metadata.get('match_reason', ''),
+                        'is_community_event': metadata.get('is_community_event', False)
                     }
                     structured_addresses.append(entry)
                     
@@ -439,32 +444,32 @@ class DiscoveryDataView(LoginRequiredMixin, View):
                     moving_sales_count = 0
                     local_garage_sales = scrape_sales(zip_code, radius=5)
                     if local_garage_sales:
-                        ai = AIService()
+                        ai = AIService(user=request.user)
                         garage_analysis = ai.analyze_listings_batch([s.get('desc', '') for s in local_garage_sales[:10]])
                         moving_sales_count = sum(1 for a in garage_analysis if a.get('is_moving_sale'))
                 except Exception as se:
                     logger.error(f"Surge Engine Error: {se}")
                     moving_sales_count = 0
 
-                    if sales:
-                        ai = AIService()
-                        try:
-                            thrift_analysis = ai.analyze_thrift_batch(sales)
-                        except Exception as ai_err:
-                            logger.error(f"AI Thrift Batch Analysis failed: {ai_err}")
-                            thrift_analysis = []
-                            
-                        for i, s in enumerate(sales):
-                            analysis = thrift_analysis[i] if (i < len(thrift_analysis) and thrift_analysis[i]) else {}
-                            s['tags'] = analysis.get('tags', [])
-                            s['is_potential_goldmine'] = analysis.get('is_potential_goldmine', False)
-                            s['profit_rating'] = analysis.get('profit_rating', 'None')
-                            s['profit_reason'] = analysis.get('profit_reason', '')
-                            s['surge_count'] = moving_sales_count
-                            s['is_surge_potential'] = moving_sales_count >= 2
-                            s['is_treasure'] = False
-                            s['is_bust_candidate'] = False
-                            s['is_wishlist_match'] = False
+                if sales:
+                    ai = AIService(user=request.user)
+                    try:
+                        thrift_analysis = ai.analyze_thrift_batch(sales)
+                    except Exception as ai_err:
+                        logger.error(f"AI Thrift Batch Analysis failed: {ai_err}")
+                        thrift_analysis = []
+                        
+                    for i, s in enumerate(sales):
+                        analysis = thrift_analysis[i] if (i < len(thrift_analysis) and thrift_analysis[i]) else {}
+                        s['tags'] = analysis.get('tags', [])
+                        s['is_potential_goldmine'] = analysis.get('is_potential_goldmine', False)
+                        s['profit_rating'] = analysis.get('profit_rating', 'None')
+                        s['profit_reason'] = analysis.get('profit_reason', '')
+                        s['surge_count'] = moving_sales_count
+                        s['is_surge_potential'] = moving_sales_count >= 2
+                        s['is_treasure'] = False
+                        s['is_bust_candidate'] = False
+                        s['is_wishlist_match'] = False
             else:
                 sales = scrape_sales(zip_code, radius)
 
@@ -489,7 +494,7 @@ class DiscoveryDataView(LoginRequiredMixin, View):
                 sales = [s for s in sales if isinstance(s, dict) and s.get('address') not in hidden_addrs]
                 
                 if mode != 'thrift':
-                    ai = AIService()
+                    ai = AIService(user=request.user)
                     bust_history = list(AddressRating.objects.filter(user=request.user, rating='bust').exclude(notes='').values_list('notes', flat=True)[:10])
                     wishlist = getattr(request.user.userprofile, 'looking_for', '')
                     

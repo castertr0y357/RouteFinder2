@@ -39,13 +39,20 @@ class EmailAuthenticationForm(AuthenticationForm):
 class UserProfileForm(forms.ModelForm):
     class Meta:
         model = UserProfile
-        fields = ['home_street', 'home_zip', 'home_state', 'default_stop_mins', 'looking_for']
+        fields = [
+            'home_street', 'home_zip', 'home_state', 
+            'default_stop_mins', 
+            'looking_for', 'ai_enabled', 'ai_thinking_enabled', 'ai_thinking_effort'
+        ]
         labels = {
             'home_street': 'Street & City',
             'home_zip': 'Zip Code',
             'home_state': 'State (2-letter)',
             'default_stop_mins': 'Default Minutes Per Sale',
             'looking_for': 'What are you looking for? (AI Wishlist)',
+            'ai_enabled': 'Enable AI Scouting Features',
+            'ai_thinking_enabled': 'Enable AI Deep Thinking',
+            'ai_thinking_effort': 'AI Thinking Effort Level',
         }
         widgets = {
             'home_street': forms.TextInput(attrs={'placeholder': '123 Main St, City'}),
@@ -53,6 +60,9 @@ class UserProfileForm(forms.ModelForm):
             'home_state': forms.TextInput(attrs={'placeholder': 'CA', 'maxlength': '2'}),
             'default_stop_mins': forms.NumberInput(attrs={'min': 0}),
             'looking_for': forms.Textarea(attrs={'rows': 2, 'placeholder': 'e.g. Vintage Pyrex, Gameboy, Tools'}),
+            'ai_enabled': forms.CheckboxInput(attrs={'class': 'switch-checkbox'}),
+            'ai_thinking_enabled': forms.CheckboxInput(attrs={'class': 'switch-checkbox'}),
+            'ai_thinking_effort': forms.NumberInput(attrs={'type': 'range', 'min': '1', 'max': '100', 'step': '1', 'class': 'range-slider'}),
         }
 
 class SearchForm(forms.Form):

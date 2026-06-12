@@ -1,21 +1,106 @@
 {% extends "RouteFinderWeb/base.html" %}
 
 {% block content %}
-<div style="max-width: 500px; margin: 0 auto;">
-    <div class="card" style="padding: 2.5rem;">
-        <h2 style="margin-bottom: 2rem; font-size: 1.5rem;">Your Profile</h2>
+<div style="max-width: 600px; margin: 0 auto;">
+    <div class="card" style="padding: 2rem;">
+        <h2 style="margin-bottom: 1.5rem; font-size: 1.5rem; text-align: center;">Settings & Profile</h2>
+        
         <form method="post" action="{% url 'profile' %}">
             {% csrf_token %}
-            <div class="form-group">
-                {{ form.as_p }}
+            
+            <!-- Tab Navigation Header -->
+            <div class="profile-tabs-container">
+                <button type="button" id="tab-btn-address" class="profile-tab-btn active" onclick="switchTab('address')">📍 Base</button>
+                <button type="button" id="tab-btn-defaults" class="profile-tab-btn" onclick="switchTab('defaults')">🕒 Defaults</button>
+                <button type="button" id="tab-btn-ai" class="profile-tab-btn" onclick="switchTab('ai')">🧠 AI Settings</button>
             </div>
+            
+            <!-- Tab 1: Address (Base) -->
+            <div id="tab-content-address" class="profile-tab-content">
+                <div class="form-group">
+                    <label for="{{ form.home_street.id_for_label }}">{{ form.home_street.label }}</label>
+                    {{ form.home_street }}
+                    {% if form.home_street.errors %}<div style="color: var(--bust-color); font-size: 0.85rem; margin-top: -0.75rem; margin-bottom: 1rem;">{{ form.home_street.errors }}</div>{% endif %}
+                </div>
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 0.75rem;">
+                    <div class="form-group">
+                        <label for="{{ form.home_zip.id_for_label }}">{{ form.home_zip.label }}</label>
+                        {{ form.home_zip }}
+                        {% if form.home_zip.errors %}<div style="color: var(--bust-color); font-size: 0.85rem; margin-top: -0.75rem; margin-bottom: 1rem;">{{ form.home_zip.errors }}</div>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.home_state.id_for_label }}">{{ form.home_state.label }}</label>
+                        {{ form.home_state }}
+                        {% if form.home_state.errors %}<div style="color: var(--bust-color); font-size: 0.85rem; margin-top: -0.75rem; margin-bottom: 1rem;">{{ form.home_state.errors }}</div>{% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tab 2: Defaults -->
+            <div id="tab-content-defaults" class="profile-tab-content" style="display: none;">
+                <div class="form-group">
+                    <label for="{{ form.default_stop_mins.id_for_label }}">{{ form.default_stop_mins.label }}</label>
+                    {{ form.default_stop_mins }}
+                    {% if form.default_stop_mins.errors %}<div style="color: var(--bust-color); font-size: 0.85rem; margin-top: -0.75rem; margin-bottom: 1rem;">{{ form.default_stop_mins.errors }}</div>{% endif %}
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: -0.75rem; margin-bottom: 1.25rem;">Default minutes spent scouting each individual garage sale stop.</p>
+                </div>
+            </div>
+            
+            <!-- Tab 3: AI Settings -->
+            <div id="tab-content-ai" class="profile-tab-content" style="display: none;">
+                <!-- Switch for ai_enabled -->
+                <div class="switch-wrapper">
+                    <div class="switch-info">
+                        <span class="switch-title">Enable Gemma AI Intel</span>
+                        <span class="switch-desc">Unlock badging, treasure alerts, community clustering, and auto-wishlist matching.</span>
+                    </div>
+                    <label class="switch-control" for="{{ form.ai_enabled.id_for_label }}">
+                        {{ form.ai_enabled }}
+                        <span class="switch-slider"></span>
+                    </label>
+                </div>
+
+                <!-- AI Dependent settings container -->
+                <div id="ai-settings-dependent">
+                    <!-- Switch for ai_thinking_enabled -->
+                    <div class="switch-wrapper">
+                        <div class="switch-info">
+                            <span class="switch-title">AI Deep Thinking</span>
+                            <span class="switch-desc">Allows Gemma to execute multi-step reasoning before classifying a listing.</span>
+                        </div>
+                        <label class="switch-control" for="{{ form.ai_thinking_enabled.id_for_label }}">
+                            {{ form.ai_thinking_enabled }}
+                            <span class="switch-slider"></span>
+                        </label>
+                    </div>
+
+                    <!-- Slider for ai_thinking_effort -->
+                    <div id="ai-thinking-effort-wrapper" class="range-slider-wrapper">
+                        <div class="range-slider-header">
+                            <span class="range-slider-label">Thinking Effort Level</span>
+                            <span id="effort-value-badge" class="range-slider-badge">50%</span>
+                        </div>
+                        {{ form.ai_thinking_effort }}
+                        <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0.5rem 0 0 0;">Higher effort yields high-fidelity insights but increases response latency.</p>
+                    </div>
+
+                    <!-- Textarea for looking_for -->
+                    <div class="form-group">
+                        <label for="{{ form.looking_for.id_for_label }}">{{ form.looking_for.label }}</label>
+                        {{ form.looking_for }}
+                        {% if form.looking_for.errors %}<div style="color: var(--bust-color); font-size: 0.85rem; margin-top: -0.75rem; margin-bottom: 1rem;">{{ form.looking_for.errors }}</div>{% endif %}
+                        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: -0.75rem; margin-bottom: 1.25rem;">Comma-separated wishlist keywords. Gemma will instantly tag matches.</p>
+                    </div>
+                </div>
+            </div>
+            
             <div style="margin-top: 2rem;">
-                <input type="submit" value="Update Profile" style="padding: 1rem; font-weight: 700;">
+                <input type="submit" value="Update Settings" style="padding: 1rem; font-weight: 700;">
             </div>
         </form>
         
-        <div style="margin-top: 2.5rem; padding-top: 2.5rem; border-top: 1px solid var(--border-color); text-align: center;">
-            <a href="{% url 'password_change' %}" style="display: block; background: rgba(255,255,255,0.05); color: white; padding: 1rem; border-radius: 0.75rem; text-decoration: none; font-weight: 700; border: 1px solid var(--border-color); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
+        <div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--border-color); text-align: center;">
+            <a href="{% url 'password_change' %}" style="display: block; background: rgba(255,255,255,0.03); color: white; padding: 1rem; border-radius: 0.75rem; text-decoration: none; font-weight: 700; border: 1px solid var(--border-color); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='rgba(255,255,255,0.03)'">
                 🔐 Manage Security & Password
             </a>
         </div>
@@ -25,4 +110,70 @@
         </div>
     </div>
 </div>
+
+<script>
+function switchTab(tabId) {
+    // Hide all tab contents
+    document.querySelectorAll('.profile-tab-content').forEach(el => {
+        el.style.display = 'none';
+    });
+    // Remove active class from all tab buttons
+    document.querySelectorAll('.profile-tab-btn').forEach(el => {
+        el.classList.remove('active');
+    });
+    
+    // Show active tab content
+    const targetContent = document.getElementById('tab-content-' + tabId);
+    if (targetContent) {
+        targetContent.style.display = 'block';
+    }
+    // Add active class to clicked button
+    const targetBtn = document.getElementById('tab-btn-' + tabId);
+    if (targetBtn) {
+        targetBtn.classList.add('active');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const aiEnabledCheckbox = document.getElementById('{{ form.ai_enabled.id_for_label }}');
+    const aiThinkingCheckbox = document.getElementById('{{ form.ai_thinking_enabled.id_for_label }}');
+    const aiDependentContainer = document.getElementById('ai-settings-dependent');
+    const aiThinkingEffortWrapper = document.getElementById('ai-thinking-effort-wrapper');
+    const effortSlider = document.getElementById('{{ form.ai_thinking_effort.id_for_label }}');
+    const effortBadge = document.getElementById('effort-value-badge');
+
+    function updateDependentVisibility() {
+        if (aiEnabledCheckbox && aiDependentContainer) {
+            aiDependentContainer.style.display = aiEnabledCheckbox.checked ? 'block' : 'none';
+        }
+    }
+
+    function updateThinkingEffortVisibility() {
+        if (aiThinkingCheckbox && aiThinkingEffortWrapper) {
+            aiThinkingEffortWrapper.style.display = aiThinkingCheckbox.checked ? 'block' : 'none';
+        }
+    }
+
+    function updateEffortBadge() {
+        if (effortSlider && effortBadge) {
+            effortBadge.innerText = effortSlider.value + '%';
+        }
+    }
+
+    if (aiEnabledCheckbox) {
+        aiEnabledCheckbox.addEventListener('change', updateDependentVisibility);
+    }
+    if (aiThinkingCheckbox) {
+        aiThinkingCheckbox.addEventListener('change', updateThinkingEffortVisibility);
+    }
+    if (effortSlider) {
+        effortSlider.addEventListener('input', updateEffortBadge);
+    }
+
+    // Run initial checks
+    updateDependentVisibility();
+    updateThinkingEffortVisibility();
+    updateEffortBadge();
+});
+</script>
 {% endblock %}

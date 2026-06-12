@@ -46,6 +46,8 @@
 </div>
 
 {% if perform_search %}
+<div id="scout-radar-map" style="height: 350px; width: 100%; border-radius: 1.5rem; margin-top: 1rem; margin-bottom: 2rem; border: 1px solid var(--border-color); display: none; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3);"></div>
+
 <div id="loading-state" style="text-align: center; padding: 6rem 2rem; background: rgba(30, 41, 59, 0.3); border-radius: 1.5rem; border: 1px solid var(--border-color); margin-top: 1rem;">
     <!-- Dual Gear Animation -->
     <div style="position: relative; width: 80px; height: 80px; margin: 0 auto 2.5rem auto;">
@@ -93,27 +95,46 @@
         <a href="https://www.craigslist.org/search/gms?postal={{ zip_code }}&search_distance={{ radius|default:'20' }}" target="_blank" rel="noopener noreferrer" style="display: inline-block; padding: 0.75rem 1.5rem; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 0.5rem; color: white; text-decoration: none; font-weight: 600; font-size: 0.9rem; transition: all 0.2s ease;">
             🔍 Search Craigslist for this area
         </a>
-    </div>
-</div>
+    <script>
+let map;
+let markers = [];
+let geocoder;
+let bounds;
 
-<script>
+function initMap() {
+    geocoder = new google.maps.Geocoder();
+    bounds = new google.maps.LatLngBounds();
+    
+    map = new google.maps.Map(document.getElementById('scout-radar-map'), {
+        center: { lat: 39.8283, lng: -98.5795 }, // Center of USA
+        zoom: 4,
+        styles: [
+            { "elementType": "geometry", "stylers": [{ "color": "#1e293b" }] },
+            { "elementType": "labels.text.stroke", "stylers": [{ "color": "#1e293b" }] },
+            { "elementType": "labels.text.fill", "stylers": [{ "color": "#94a3b8" }] },
+            { "featureType": "road", "elementType": "geometry", "stylers": [{ "color": "#334155" }] },
+            { "featureType": "road", "elementType": "geometry.stroke", "stylers": [{ "color": "#1e293b" }] },
+            { "featureType": "water", "elementType": "geometry", "stylers": [{ "color": "#0f172a" }] }
+        ],
+        disableDefaultUI: true,
+        zoomControl: true,
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const shouldSearch = "{{ perform_search }}";
-    if (shouldSearch !== "True") return;
-
     const statusText = document.getElementById('loading-status');
     const progressBar = document.getElementById('loading-bar');
     const loadingTitle = document.getElementById('loading-title');
+    const mapDiv = document.getElementById('scout-radar-map');
     
-    // Support for 'The Vault' Loading (Must be before early return)
+    // Support for 'The Vault' Loading
     const vaultBtn = document.getElementById('load-vault-btn');
     if (vaultBtn) {
         vaultBtn.addEventListener('click', () => {
             vaultBtn.innerHTML = '📂 ACCESSING THE VAULT...';
             vaultBtn.style.opacity = '0.7';
             vaultBtn.disabled = true;
-            
-            // Show loading state
             document.getElementById('loading-state').style.display = 'block';
             document.getElementById('loading-title').innerText = '📂 Vault Decryption';
             
@@ -133,11 +154,17 @@ document.addEventListener('DOMContentLoaded', function() {
     if (shouldSearch !== "True") return;
 
     const statuses = [
+        {% if request.user.is_authenticated and request.user.userprofile.ai_enabled %}
         { time: 0, text: "Pulling latest listings from data sources...", title: "📡 Data Scouring", progress: 10 },
         { time: 2000, text: "Parsing addresses and sale times...", title: "🔍 Map Syncing", progress: 25 },
         { time: 5000, text: "Gemma AI is analyzing descriptions for treasure...", title: "🧠 AI Analysis", progress: 45 },
         { time: 10000, text: "Cross-referencing your personal wishlist...", title: "🎯 Match Hunting", progress: 70 },
         { time: 15000, text: "Clustering community neighborhood events...", title: "📂 Finalizing Groups", progress: 90 }
+        {% else %}
+        { time: 0, text: "Pulling latest listings from data sources...", title: "📡 Data Scouring", progress: 20 },
+        { time: 1000, text: "Parsing addresses and sale times...", title: "🔍 Map Syncing", progress: 60 },
+        { time: 2000, text: "Finalizing listings...", title: "📡 Done", progress: 95 }
+        {% endif %}
     ];
 
     statuses.forEach(s => {
@@ -166,106 +193,187 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('loading-state').style.display = 'none';
         
         if (sales && sales.length > 0) {
-                sales.forEach(sale => {
-                    const card = document.createElement('div');
-                    card.className = `card sale-card ${sale.is_bust_candidate ? 'bust-candidate' : ''}`;
-                    card.style.cssText = `margin-bottom: 0; padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; border-left: 6px solid ${
-                        sale.rating === 'bust' ? 'var(--bust-color)' : 
-                        sale.rating === 'great' ? 'var(--great-color)' : 'var(--primary-color)'
-                    };`;
-                    
-                    let badgesHtml = '';
-                    if (sale.is_in_planner) {
-                        badgesHtml += `<div class="wishlist-badge" style="background: rgba(99, 102, 241, 0.2); color: #818cf8; border-color: rgba(99, 102, 241, 0.3);">📍 ALREADY IN PLANNER</div>`;
-                    }
-                    if (sale.is_bust_candidate) {
-                        badgesHtml += `<span class="bust-warning-label" title="${sale.bust_reason}">⚠️ AI PREDICTION: Likely a Bust</span>`;
-                        if (sale.bust_reason) badgesHtml += `<p style="font-size: 0.75rem; color: var(--bust-color); margin-top: -0.25rem; margin-bottom: 0.5rem; font-style: italic;">"${sale.bust_reason}"</p>`;
-                    }
-                    if (sale.is_treasure) {
-                        badgesHtml += `<div class="treasure-badge" title="${sale.treasure_reason}">✨ TREASURE DETECTED</div>`;
-                        if (sale.treasure_reason) badgesHtml += `<p style="font-size: 0.75rem; color: #fbbf24; margin-top: -0.25rem; margin-bottom: 0.5rem; font-style: italic;">"${sale.treasure_reason}"</p>`;
-                    }
-                    if (sale.is_wishlist_match) {
-                        badgesHtml += `<div class="wishlist-badge" title="${sale.match_reason}">🎯 MATCH FOUND</div>`;
-                        if (sale.match_reason) badgesHtml += `<p style="font-size: 0.75rem; color: #10b981; margin-top: -0.25rem; margin-bottom: 0.5rem; font-style: italic;">"${sale.match_reason}"</p>`;
-                    }
-                    if (sale.is_community_event) {
-                        badgesHtml += `<div class="wishlist-badge" style="background: rgba(249, 115, 22, 0.2); color: #fb923c; border-color: rgba(249, 115, 22, 0.3);">🏘️ COMMUNITY EVENT</div>`;
-                    }
-                    if (sale.is_potential_duplicate) {
-                        if (sale.community_is_active) {
-                            badgesHtml += `<div class="wishlist-badge" style="background: rgba(239, 68, 68, 0.15); color: var(--bust-color); border-color: rgba(239, 68, 68, 0.2); font-size: 0.65rem; font-weight: 800;">⚠️ ALREADY VISITING THIS COMMUNITY</div>`;
-                            badgesHtml += `<p style="font-size: 0.7rem; color: var(--text-muted); margin-top: -0.25rem; margin-bottom: 0.5rem; font-style: italic;">One stop from ${sale.neighborhood_name} is enough for your route.</p>`;
-                        } else {
-                            badgesHtml += `<div class="wishlist-badge" style="background: rgba(148, 163, 184, 0.2); color: #94a3b8; border-color: rgba(148, 163, 184, 0.3); font-size: 0.6rem;">📂 ${sale.duplicate_count} LISTINGS IN ${sale.neighborhood_name.toUpperCase()}</div>`;
-                        }
-                    }
-
-                    if (sale.is_potential_goldmine) {
-                        badgesHtml += `<div class="wishlist-badge" style="background: rgba(167, 139, 250, 0.2); color: #c4b5fd; border-color: rgba(167, 139, 250, 0.3); font-weight: 800;">💎 POTENTIAL GOLDMINE</div>`;
-                    }
-                    if (sale.profit_rating && sale.profit_rating !== 'None') {
-                        badgesHtml += `<div class="wishlist-badge" style="background: rgba(251, 191, 36, 0.2); color: #fbbf24; border-color: rgba(251, 191, 36, 0.3); font-weight: 800;" title="${sale.profit_reason || ''}">💸 ${sale.profit_rating.toUpperCase()} PROFIT POTENTIAL</div>`;
-                    }
-                    if (sale.is_surge_potential) {
-                        badgesHtml += `<div class="wishlist-badge" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; border-color: rgba(56, 189, 248, 0.3); font-weight: 800;" title="Detected ${sale.surge_count} nearby moving sales recently. Probability of fresh donations is high.">🚀 RECENT DONATION SURGE</div>`;
-                    }
-
-                    let tagsHtml = '';
-                    if (sale.tags && sale.tags.length > 0) {
-                        tagsHtml = `<div style="display: flex; gap: 0.35rem; flex-wrap: wrap; margin-top: 0.25rem;">
-                            ${sale.tags.map(tag => `<span class="ai-tag">${tag}</span>`).join('')}
-                        </div>`;
-                    }
-
-                    const isDisabled = sale.is_in_planner || sale.community_is_active;
-                    const checkboxTitle = sale.is_in_planner ? 'Already in planner' : (sale.community_is_active ? `You already have a stop in ${sale.neighborhood_name}` : 'Add to route');
-
-                    card.innerHTML = `
-                        <div class="sale-card-header" style="display: flex; justify-content: space-between; align-items: flex-start;">
-                            <div style="flex: 1;">
-                                ${badgesHtml}
-                                <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.25rem; flex-wrap: wrap;">
-                                    <h3 style="font-size: 1.15rem; margin: 0; line-height: 1.2;">${sale.title}</h3>
-                                    <button type="button" onclick="hideSale('${sale.address}', this)" title="Hide listing" style="background: rgba(239, 68, 68, 0.1); border: none; color: var(--bust-color); font-size: 0.65rem; cursor: pointer; font-weight: 800; width: 44px; height: 22px; display: flex; align-items: center; justify-content: center; border-radius: 4px; line-height: 1; letter-spacing: 0.05em; transition: all 0.2s; flex-shrink: 0;">HIDE</button>
-                                </div>
-                                <p style="color: var(--text-muted); font-size: 0.9rem; font-weight: 600; margin: 0;">📍 ${sale.address}</p>
-                            </div>
-                            <div class="checkbox-wrapper" style="margin-left: 1.5rem;">
-                                <input type="checkbox" name="selected_sales" value="${sale.address}" title="${checkboxTitle}" style="width: 1.75rem; height: 1.75rem; cursor: ${isDisabled ? 'not-allowed' : 'pointer'}; accent-color: var(--primary-color); opacity: ${isDisabled ? '0.4' : '1'};" ${isDisabled ? 'disabled' : ''}>
-                            </div>
-                        </div>
-                        ${tagsHtml}
-                        <p style="margin: 0.5rem 0; font-size: 0.95rem; line-height: 1.5; color: rgba(248, 250, 252, 0.8);">${sale.desc || ''}</p>
-                        <div style="display: flex; gap: 1rem; align-items: center; justify-content: space-between; border-top: 1px solid var(--border-color); padding-top: 1rem; margin-top: 0.5rem;">
-                            <div style="display: flex; gap: 1rem; align-items: center;">
-                                <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">🕒 ${sale.time || ''}</span>
-                                <a href="${sale.source_url}" target="_blank" rel="noopener noreferrer" style="font-size: 0.85rem; color: var(--primary-color); text-decoration: none; font-weight: 600;">View Details &rarr;</a>
-                            </div>
-                            ${sale.rating !== 'neutral' ? `
-                            <span style="padding: 0.25rem 0.75rem; border-radius: 99px; font-size: 0.75rem; font-weight: 800; background: ${sale.rating === 'great' ? 'rgba(251, 191, 36, 0.15)' : 'rgba(239, 68, 68, 0.15)'}; color: ${sale.rating === 'great' ? 'var(--great-color)' : 'var(--bust-color)'}; letter-spacing: 0.02em; border: 1px solid currentColor;">
-                                ${sale.rating.toUpperCase()} HISTORY
-                            </span>` : ''}
-                        </div>
-                    `;
-                    grid.appendChild(card);
-                });
-                document.getElementById('results-container').style.display = 'block';
-            } else {
-                document.getElementById('no-results').style.display = 'block';
+            mapDiv.style.display = 'block';
+            if (typeof google !== 'undefined') {
+                initMap();
+                plotMarkers(sales);
             }
+
+            sales.forEach(sale => {
+                const card = document.createElement('div');
+                card.className = `card sale-card ${sale.is_bust_candidate ? 'bust-candidate' : ''}`;
+                card.id = `sale-${btoa(sale.address).replace(/=/g, '')}`;
+                card.style.cssText = `margin-bottom: 0; padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; border-left: 6px solid ${
+                    sale.rating === 'bust' ? 'var(--bust-color)' : 
+                    sale.rating === 'great' ? 'var(--great-color)' : 'var(--primary-color)'
+                }; transition: all 0.2s ease; cursor: pointer;`;
+                
+                card.onclick = () => {
+                    const marker = markers.find(m => m.address === sale.address);
+                    if (marker) {
+                        map.setZoom(16);
+                        map.panTo(marker.getPosition());
+                        google.maps.event.trigger(marker, 'click');
+                    }
+                };
+                
+                let badgesHtml = '';
+                if (sale.is_in_planner) {
+                    badgesHtml += `<div class="wishlist-badge" style="background: rgba(99, 102, 241, 0.2); color: #818cf8; border-color: rgba(99, 102, 241, 0.3);">📍 ALREADY IN PLANNER</div>`;
+                }
+                if (sale.is_bust_candidate) {
+                    badgesHtml += `<span class="bust-warning-label" title="${sale.bust_reason}">⚠️ AI PREDICTION: Likely a Bust</span>`;
+                }
+                if (sale.is_treasure) {
+                    badgesHtml += `<div class="treasure-badge" title="${sale.treasure_reason}">✨ TREASURE DETECTED</div>`;
+                }
+                if (sale.is_wishlist_match) {
+                    badgesHtml += `<div class="wishlist-badge" title="${sale.match_reason}">🎯 MATCH FOUND</div>`;
+                }
+                if (sale.is_community_event) {
+                    badgesHtml += `<div class="wishlist-badge" style="background: rgba(249, 115, 22, 0.2); color: #fb923c; border-color: rgba(249, 115, 22, 0.3);">🏘️ COMMUNITY EVENT</div>`;
+                }
+
+                let tagsHtml = '';
+                if (sale.tags && sale.tags.length > 0) {
+                    tagsHtml = `<div style="display: flex; gap: 0.35rem; flex-wrap: wrap; margin-top: 0.25rem;">
+                        ${sale.tags.map(tag => `<span class="ai-tag">${tag}</span>`).join('')}
+                    </div>`;
+                }
+
+                const isDisabled = sale.is_in_planner || sale.community_is_active;
+                const checkboxTitle = sale.is_in_planner ? 'Already in planner' : (sale.community_is_active ? `You already have a stop in ${sale.neighborhood_name}` : 'Add to route');
+
+                card.innerHTML = `
+                    <div class="sale-card-header" style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div style="flex: 1;">
+                            ${badgesHtml}
+                            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.25rem; flex-wrap: wrap;">
+                                <h3 style="font-size: 1.15rem; margin: 0; line-height: 1.2;">${sale.title}</h3>
+                                <button type="button" onclick="event.stopPropagation(); hideSale('${sale.address}', this)" title="Hide listing" style="background: rgba(239, 68, 68, 0.1); border: none; color: var(--bust-color); font-size: 0.65rem; cursor: pointer; font-weight: 800; width: 44px; height: 22px; display: flex; align-items: center; justify-content: center; border-radius: 4px; line-height: 1; letter-spacing: 0.05em; transition: all 0.2s; flex-shrink: 0;">HIDE</button>
+                            </div>
+                            <p style="color: var(--text-muted); font-size: 0.9rem; font-weight: 600; margin: 0;">📍 ${sale.address}</p>
+                        </div>
+                        <div class="checkbox-wrapper" style="margin-left: 1.5rem;" onclick="event.stopPropagation();">
+                            <input type="checkbox" name="selected_sales" value="${sale.address}" title="${checkboxTitle}" style="width: 1.75rem; height: 1.75rem; cursor: ${isDisabled ? 'not-allowed' : 'pointer'}; accent-color: var(--primary-color); opacity: ${isDisabled ? '0.4' : '1'};" ${isDisabled ? 'disabled' : ''}>
+                        </div>
+                    </div>
+                    ${tagsHtml}
+                    <p style="margin: 0.5rem 0; font-size: 0.95rem; line-height: 1.5; color: rgba(248, 250, 252, 0.8);">${sale.desc || ''}</p>
+                    <div style="display: flex; gap: 1rem; align-items: center; justify-content: space-between; border-top: 1px solid var(--border-color); padding-top: 1rem; margin-top: 0.5rem;">
+                        <div style="display: flex; gap: 1rem; align-items: center;">
+                            <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">🕒 ${sale.time || ''}</span>
+                        </div>
+                        ${sale.rating !== 'neutral' ? `
+                        <span style="padding: 0.25rem 0.75rem; border-radius: 99px; font-size: 0.75rem; font-weight: 800; background: ${sale.rating === 'great' ? 'rgba(251, 191, 36, 0.15)' : 'rgba(239, 68, 68, 0.15)'}; color: ${sale.rating === 'great' ? 'var(--great-color)' : 'var(--bust-color)'}; letter-spacing: 0.02em; border: 1px solid currentColor;">
+                            ${sale.rating.toUpperCase()} HISTORY
+                        </span>` : ''}
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+            document.getElementById('results-container').style.display = 'block';
+        } else {
+            document.getElementById('no-results').style.display = 'block';
+        }
+    }
+
+    function plotMarkers(sales) {
+        sales.forEach((sale, i) => {
+            if (sale.lat && sale.lng) {
+                addMarker(sale, { lat: sale.lat, lng: sale.lng });
+            } else {
+                // Geocode with delay to avoid rate limits
+                setTimeout(() => {
+                    geocoder.geocode({ address: sale.address }, (results, status) => {
+                        if (status === 'OK') {
+                            addMarker(sale, results[0].geometry.location);
+                        }
+                    });
+                }, i * 250);
+            }
+        });
+    }
+
+    function addMarker(sale, location) {
+        let color = "#6366f1"; // Primary
+        if (sale.rating === 'bust' || sale.is_bust_candidate) color = "#ef4444";
+        if (sale.rating === 'great' || sale.is_treasure) color = "#fbbf24";
+        if (sale.is_wishlist_match) color = "#10b981";
+
+        const marker = new google.maps.Marker({
+            position: location,
+            map: map,
+            title: sale.title,
+            address: sale.address,
+            icon: {
+                path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
+                fillColor: color,
+                fillOpacity: 1,
+                strokeWeight: 2,
+                strokeColor: "#ffffff",
+                scale: 7
+            }
+        });
+
+        bounds.extend(location);
+        map.fitBounds(bounds);
+        markers.push(marker);
+
+        const infoWindow = new google.maps.InfoWindow({
+            content: `<div style="color: #1e293b; padding: 0.5rem;">
+                <strong style="display: block; margin-bottom: 0.25rem;">${sale.title}</strong>
+                <span style="font-size: 0.8rem; color: #64748b;">${sale.address}</span>
+            </div>`
+        });
+
+        marker.addListener('click', () => {
+            infoWindow.open(map, marker);
+            // Highlight the card
+            const cardId = `sale-${btoa(sale.address).replace(/=/g, '')}`;
+            const card = document.getElementById(cardId);
+            if (card) {
+                card.style.borderColor = "white";
+                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                setTimeout(() => {
+                    card.style.borderColor = "";
+                }, 2000);
+            }
+        });
     }
 });
+
+async function hideSale(address, btn) {
+    if (!confirm('Are you sure you want to hide this listing?')) return;
+    try {
+        const response = await fetch('{% url "hide_sale" %}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+            body: JSON.stringify({ address: address })
+        });
+        const data = await response.json();
+        if (data.success) {
+            const card = btn.closest('.sale-card');
+            card.style.opacity = '0';
+            setTimeout(() => card.remove(), 400);
+            // Remove marker
+            const markerIndex = markers.findIndex(m => m.address === address);
+            if (markerIndex > -1) {
+                markers[markerIndex].setMap(null);
+                markers.splice(markerIndex, 1);
+            }
+        }
+    } catch (error) { console.error(error); }
+}
 </script>
-{% endif %}
+
+<script src="https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_MAPS_API_KEY }}&libraries=geometry" async defer></script>
 
 <script>
     document.getElementById('addCustomBtn')?.addEventListener('click', () => {
         const container = document.getElementById('custom-addresses-container');
         const row = document.createElement('div');
-        row.style.display = 'flex';
-        row.style.gap = '0.5rem';
+        row.style.display = 'flex'; row.style.gap = '0.5rem';
         row.innerHTML = `
             <input type="text" name="selected_sales" placeholder="123 Example St, City, ST" style="flex: 1; margin-bottom: 0;">
             <button type="button" onclick="this.parentElement.remove()" style="background: rgba(239, 68, 68, 0.1); color: var(--bust-color); width: 45px; padding: 0.5rem; border-radius: 0.75rem; box-shadow: none;">&times;</button>
@@ -278,87 +386,28 @@ document.addEventListener('DOMContentLoaded', function() {
     const zipInput = document.getElementById('zip_code_input');
 
     locationBtn?.addEventListener('click', () => {
-        // Hardening: Check for secure context
-        if (!window.isSecureContext) {
-            alert('Security Restriction: Geolocation requires a Secure Context (HTTPS or localhost). Your current connection may be blocked by the browser.');
-        }
-
-        if (!navigator.geolocation) {
-            alert('Geolocation is not supported by your browser');
-            return;
-        }
-
+        if (!navigator.geolocation) return;
         locationBtn.disabled = true;
         const originalContent = locBtnContent.innerHTML;
-        locBtnContent.innerHTML = '<span class="spinner" style="display: inline-block; width: 0.85rem; height: 0.85rem; border: 2px solid currentColor; border-radius: 50%; border-top-color: transparent; animation: spin 1s linear infinite; margin-right: 0.5rem;"></span> Locating...';
+        locBtnContent.innerHTML = 'Locating...';
         
-        navigator.geolocation.getCurrentPosition(
-            async (position) => {
-                try {
-                    const response = await fetch('{% url "get_zip_code" %}', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': '{{ csrf_token }}'
-                        },
-                        body: JSON.stringify({
-                            lat: position.coords.latitude,
-                            lon: position.coords.longitude
-                        })
-                    });
-                    
-                    const data = await response.json();
-                    if (data.success && data.zip_code) {
-                        zipInput.value = data.zip_code;
-                        zipInput.closest('form').submit();
-                    } else {
-                        alert(data.error || 'Could not determine zip code for this location.');
-                    }
-                } catch (error) {
-                    console.error('Error:', error);
-                    alert('Error communicating with the server.');
-                } finally {
-                    locationBtn.disabled = false;
-                    locBtnContent.innerHTML = originalContent;
+        navigator.geolocation.getCurrentPosition(async (position) => {
+            try {
+                const response = await fetch('{% url "get_zip_code" %}', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+                    body: JSON.stringify({ lat: position.coords.latitude, lon: position.coords.longitude })
+                });
+                const data = await response.json();
+                if (data.success && data.zip_code) {
+                    zipInput.value = data.zip_code;
+                    zipInput.closest('form').submit();
                 }
-            },
-            (error) => {
-                alert('Error getting location: ' + error.message);
-                locationBtn.disabled = false;
-                locBtnContent.innerHTML = originalContent;
-            }
-        );
+            } catch (error) { console.error(error); }
+            finally { locationBtn.disabled = false; locBtnContent.innerHTML = originalContent; }
+        }, () => { locationBtn.disabled = false; locBtnContent.innerHTML = originalContent; });
     });
-
-    async function hideSale(address, btn) {
-        if (!confirm('Are you sure you want to hide this listing? It will not appear in future searches.')) return;
-        
-        try {
-            const response = await fetch('{% url "hide_sale" %}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': '{{ csrf_token }}'
-                },
-                body: JSON.stringify({ address: address })
-            });
-            
-            const data = await response.json();
-            if (data.success) {
-                // Fade out and remove the card
-                const card = btn.closest('.sale-card');
-                card.style.transition = 'all 0.4s ease';
-                card.style.opacity = '0';
-                card.style.transform = 'translateX(20px)';
-                setTimeout(() => card.remove(), 400);
-            } else {
-                alert(data.error || 'Error hiding sale');
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            alert('Error communicating with the server.');
-        }
-    }
+</script>
 </script>
 
 <style>

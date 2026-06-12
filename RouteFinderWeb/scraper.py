@@ -329,10 +329,13 @@ def scrape_thrift_stores(zip_code, api_key):
             rating = place.get('rating', 'N/A')
             reviews = place.get('user_ratings_total', 0)
             
+            geometry = place.get('geometry', {}).get('location', {})
             stores.append({
                 'id': place.get('place_id', f"place_{idx}"),
                 'title': place.get('name'),
                 'address': place.get('formatted_address', f"Unknown Address, {zip_code}"),
+                'lat': geometry.get('lat'),
+                'lng': geometry.get('lng'),
                 'time': f"Today: {detail['hours']}",
                 'desc': f"Rating: {rating}⭐ ({reviews} reviews) | 📞 {detail['phone']}",
                 'source_url': f"https://www.google.com/maps/place/?q=place_id:{place.get('place_id')}",
