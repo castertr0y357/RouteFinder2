@@ -4,6 +4,9 @@
 - None (All current objectives met).
 
 ## 🚀 Completed Features
+- Fixed issue where the AI settings page did not display the new service provider, API URL, and model fields due to the Service Worker caching the profile page.
+- Incremented PWA cache version to `routefinder-v4` to force a cache purge and update across client browsers.
+- Added comprehensive unit tests (`ProfileViewTests`) to verify the rendering of the AI settings fields on the profile page.
 - Baseline project setup and environment diagnostics.
 - Fixed syntax error in `views.py` and updated `tests.py` to match current signatures.
 - Implemented AI Settings in User Profile with a tabbed UI (Address, Defaults, AI Settings).

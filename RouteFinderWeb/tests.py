@@ -172,4 +172,18 @@ class SaleDiscoveryViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
 
 
+class ProfileViewTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="testuser@example.com", email="testuser@example.com", password="password")
+        self.client.login(username="testuser@example.com", password="password")
+
+    def test_profile_page_renders_fields(self):
+        response = self.client.get('/profile/')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'id_ai_provider')
+        self.assertContains(response, 'id_ai_api_url')
+        self.assertContains(response, 'id_ai_model')
+
+
+
 
