@@ -16,3 +16,7 @@ venv.bak/
 .vscode/
 *.swp
 *.swo
+
+# Backups
+backups/
+

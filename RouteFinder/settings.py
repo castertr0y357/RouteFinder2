@@ -28,6 +28,7 @@ DEBUG = env('DEBUG', default=True)
 
 OLLAMA_BASE_URL = env('OLLAMA_BASE_URL', default='http://host.docker.internal:11434')
 OLLAMA_MODEL = env('OLLAMA_MODEL', default='gemma:4b')
+MOCK_MODE = env.bool('MOCK_MODE', default=False)
 
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['*'])
 CSRF_TRUSTED_ORIGINS = env.list('CSRF_TRUSTED_ORIGINS', default=[])

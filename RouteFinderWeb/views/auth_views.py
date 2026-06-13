@@ -1,0 +1,41 @@
+from typing import Any
+from django.shortcuts import render, redirect
+from django.views import View
+from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import HttpRequest, HttpResponse
+
+from .. import forms
+
+class RegisterView(View):
+    template_name: str = 'RouteFinderWeb/register.html'
+    
+    def get(self, request: HttpRequest) -> HttpResponse:
+        form = forms.UserRegisterForm()
+        return render(request, self.template_name, {'form': form})
+        
+    def post(self, request: HttpRequest) -> HttpResponse:
+        form = forms.UserRegisterForm(request.POST)
+        if form.is_valid():
+            user = form.save(commit=False)
+            user.is_active = False # Manual Admin Approval required
+            user.save()
+            messages.success(request, f"Account application submitted for {user.username}. You will be able to log in once an Administrator approves the account.")
+            return redirect('login')
+        return render(request, self.template_name, {'form': form})
+
+
+class ProfileView(LoginRequiredMixin, View):
+    template_name: str = 'RouteFinderWeb/profile.html'
+    
+    def get(self, request: HttpRequest) -> HttpResponse:
+        form = forms.UserProfileForm(instance=request.user.userprofile)
+        return render(request, self.template_name, {'form': form})
+        
+    def post(self, request: HttpRequest) -> HttpResponse:
+        form = forms.UserProfileForm(request.POST, instance=request.user.userprofile)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Your profile has been updated.")
+            return redirect('main')
+        return render(request, self.template_name, {'form': form})

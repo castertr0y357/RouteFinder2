@@ -1,11 +1,16 @@
+from typing import Any, Dict, List
 import googlemaps
-from datetime import datetime
+from django.conf import settings
 
 class RouteSolver:
-    def __init__(self, api_key):
-        self.gmaps = googlemaps.Client(key=api_key)
+    def __init__(self, api_key: str) -> None:
+        self.mock_mode = getattr(settings, 'MOCK_MODE', False)
+        if not self.mock_mode and api_key:
+            self.gmaps = googlemaps.Client(key=api_key)
+        else:
+            self.gmaps = None
 
-    def solve(self, start_address, addresses_data, return_to_start=True):
+    def solve(self, start_address: str, addresses_data: List[Dict[str, Any]], return_to_start: bool = True) -> List[Dict[str, Any]]:
         """
         Solves the TSP for the given addresses across defined priority tiers.
         Optionally includes a final leg back to the start_address.
@@ -25,7 +30,7 @@ class RouteSolver:
         if 0 in buckets:
             keys.append(0)
             
-        optimized_route = []
+        optimized_route: List[Dict[str, Any]] = []
         current_start = start_address
         
         for k in keys:
@@ -70,16 +75,25 @@ class RouteSolver:
             
         return optimized_route
 
-    def _get_distance_matrix(self, locations):
+    def _get_distance_matrix(self, locations: List[str]) -> List[List[float]]:
         """
         Fetches the distance matrix from Google Maps API.
         Returns a 2D list of distances (in seconds).
         """
+        if self.mock_mode or not self.gmaps:
+            # Generate a mock distance matrix: 5 minutes (300 seconds) between each unique pair
+            matrix: List[List[float]] = []
+            for i in range(len(locations)):
+                row: List[float] = []
+                for j in range(len(locations)):
+                    if i == j:
+                        row.append(0.0)
+                    else:
+                        row.append(300.0)
+                matrix.append(row)
+            return matrix
+
         matrix = []
-        # Google Maps Distance Matrix API has limits on elements per request (100 max).
-        # For simplicity, we assume the number of locations is small (< 10).
-        # If it's larger, we would need to batch requests.
-        
         result = self.gmaps.distance_matrix(locations, locations, mode="driving", units="imperial")
         
         if result['status'] != 'OK':
@@ -91,7 +105,7 @@ class RouteSolver:
             for element in row['elements']:
                 if element['status'] == 'OK':
                     # Use duration value (seconds) for optimization
-                    row_distances.append(element['duration']['value'])
+                    row_distances.append(float(element['duration']['value']))
                 else:
                     # If route not found, use a very large number
                     row_distances.append(float('inf'))
@@ -99,7 +113,7 @@ class RouteSolver:
             
         return matrix
 
-    def _solve_tsp(self, distance_matrix):
+    def _solve_tsp(self, distance_matrix: List[List[float]]) -> List[int]:
         """
         Implements 2-Opt heuristic to find a near-optimal route.
         """
@@ -123,10 +137,16 @@ class RouteSolver:
                         
         return route
 
-    def _calculate_total_distance(self, route, distance_matrix):
-        total_dist = 0
+    def _calculate_total_distance(self, route: List[int], distance_matrix: List[List[float]]) -> float:
+        total_dist = 0.0
         for i in range(len(route) - 1):
             from_idx = route[i]
             to_idx = route[i+1]
-            total_dist += distance_matrix[from_idx][to_idx]
+            val = distance_matrix[from_idx][to_idx]
+            # Handle infinity safely
+            if val == float('inf'):
+                total_dist += 999999.0
+            else:
+                total_dist += val
         return total_dist
+

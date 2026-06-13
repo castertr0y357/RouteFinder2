@@ -1,3 +1,4 @@
+from typing import List
 from django import forms
 from django.core.exceptions import ValidationError
 from django.contrib.auth.models import User
@@ -12,7 +13,7 @@ class AddressForm(forms.Form):
     start_time = forms.TimeField(widget=forms.TimeInput(attrs={'type': 'time'}), label="Departure Time", initial="08:00")
     stop_mins = forms.IntegerField(label="Minutes at Each Stop", initial=15, min_value=0)
 
-    def clean_addresses(self):
+    def clean_addresses(self) -> List[str]:
         data = self.cleaned_data['addresses']
         # Split by newline and remove empty strings
         return [addr.strip() for addr in data.splitlines() if addr.strip()]
@@ -24,7 +25,7 @@ class UserRegisterForm(UserCreationForm):
         model = User
         fields = ['email']
 
-    def save(self, commit=True):
+    def save(self, commit: bool = True) -> User:
         user = super().save(commit=False)
         # Use email as username for consistency
         user.username = self.cleaned_data['email']

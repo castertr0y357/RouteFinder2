@@ -1,3 +1,4 @@
+from typing import Any, Dict, List, Optional
 import requests
 import json
 import logging
@@ -6,7 +7,7 @@ from django.conf import settings
 logger = logging.getLogger(__name__)
 
 class AIService:
-    def __init__(self, user=None):
+    def __init__(self, user: Any = None) -> None:
         self.user = user
         self.ai_enabled = True
         self.thinking_enabled = False
@@ -49,10 +50,56 @@ class AIService:
             self.base_url = getattr(settings, 'OLLAMA_BASE_URL', 'http://host.docker.internal:11434')
             self.model = getattr(settings, 'OLLAMA_MODEL', 'gemma:4b')
 
-    def _call_raw(self, prompt, timeout=50):
+    def _call_raw(self, prompt: str, timeout: int = 50) -> Any:
         """Executes raw HTTP calls to Ollama or OpenAI with settings and custom thinking options."""
         if not self.ai_enabled:
             return None
+
+        if getattr(settings, 'MOCK_MODE', False):
+            logger.info("MOCK_MODE: Mocking AI service raw call")
+            prompt_lower = prompt.lower()
+            if "garage sale description" in prompt_lower or "keys: 'tags', 'is_treasure'" in prompt_lower:
+                import re
+                count = len(re.findall(r'\d+\.\s', prompt))
+                if count == 0:
+                    count = 1
+                return [
+                    {
+                        "tags": ["#Furniture", "#MovingSale"],
+                        "is_treasure": True,
+                        "treasure_reason": "High-value vintage furniture items detected.",
+                        "is_bust_candidate": False,
+                        "bust_reason": "",
+                        "is_wishlist_match": True,
+                        "match_reason": "Matched 'vintage furniture' on wishlist.",
+                        "is_moving_sale": True,
+                        "is_potential_goldmine": True,
+                        "profit_rating": "High",
+                        "profit_reason": "Moving sale with lots of furniture."
+                    } for _ in range(count)
+                ]
+            elif "thrift stores" in prompt_lower:
+                import re
+                count = len(re.findall(r'\d+\.\s', prompt))
+                if count == 0:
+                    count = 1
+                return [
+                    {
+                        "tags": ["#Thrift", "#Goodwill"],
+                        "is_potential_goldmine": True,
+                        "profit_rating": "Medium",
+                        "profit_reason": "Highly rated thrift store."
+                    } for _ in range(count)
+                ]
+            elif "is_bust_candidate" in prompt_lower:
+                return {"is_bust_candidate": False}
+            elif "neighborhood/community clusters" in prompt_lower or "clusters" in prompt_lower:
+                return {
+                    "clusters": [
+                        {"name": "Springfield Subdivision", "indices": [0, 1]}
+                    ]
+                }
+            return {}
 
         # Build prompt override if thinking is enabled
         if self.thinking_enabled:
@@ -131,7 +178,7 @@ class AIService:
                 logger.error(f"Ollama Call Error: {e}")
             return None
 
-    def _call_ollama(self, prompt, timeout=50):
+    def _call_ollama(self, prompt: str, timeout: int = 50) -> List[Dict[str, Any]]:
         """Shared logic for calling Ollama and adapting JSON responses into lists."""
         analysis = self._call_raw(prompt, timeout)
         if not analysis:
@@ -147,7 +194,7 @@ class AIService:
                     return val
         return analysis if isinstance(analysis, list) else []
 
-    def analyze_thrift_batch(self, stores):
+    def analyze_thrift_batch(self, stores: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Specialized analysis for thrift stores with parallel chunking."""
         if not self.ai_enabled or not stores:
             return [{
@@ -157,13 +204,13 @@ class AIService:
                 "profit_reason": ""
             } for _ in stores]
         
-        results = []
+        results: List[Dict[str, Any]] = []
         chunk_size = 10
         chunks = [stores[i:i+chunk_size] for i in range(0, len(stores), chunk_size)]
         
         from concurrent.futures import ThreadPoolExecutor
         with ThreadPoolExecutor(max_workers=3) as executor:
-            def process_chunk(chunk):
+            def process_chunk(chunk: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
                 prompt = (
                     "Analyze these thrift stores and return a JSON array of objects.\n"
                     "Keys: 'tags' (list), 'is_potential_goldmine' (bool), 'profit_rating' (High/Medium/None), 'profit_reason'.\n"
@@ -195,7 +242,7 @@ class AIService:
                 
         return results
 
-    def analyze_listings_batch(self, listings, bust_history=None, wishlist=None):
+    def analyze_listings_batch(self, listings: List[str], bust_history: Optional[List[str]] = None, wishlist: Optional[str] = None) -> List[Dict[str, Any]]:
         """Enriches garage sales with tactical analysis using parallel chunking."""
         if not self.ai_enabled or not listings:
             return [{
@@ -205,13 +252,13 @@ class AIService:
                 "treasure_reason": "", "bust_reason": "", "match_reason": "", "profit_reason": ""
             } for _ in listings]
         
-        results = []
+        results: List[Dict[str, Any]] = []
         chunk_size = 8
         chunks = [listings[i:i+chunk_size] for i in range(0, len(listings), chunk_size)]
         
         from concurrent.futures import ThreadPoolExecutor
         with ThreadPoolExecutor(max_workers=3) as executor:
-            def process_chunk(chunk):
+            def process_chunk(chunk: List[str]) -> List[Dict[str, Any]]:
                 prompt = (
                     "Analyze these garage sale descriptions and return a JSON array of objects.\n"
                     "Keys: 'tags', 'is_treasure' (bool), 'treasure_reason', 'is_bust_candidate' (bool), 'bust_reason', "
@@ -256,7 +303,7 @@ class AIService:
                 
         return results
 
-    def predict_bust_suitability(self, description, bust_history):
+    def predict_bust_suitability(self, description: str, bust_history: List[str]) -> bool:
         """
         Compares a single listing against the user's history of 'Bust' sales.
         Returns a boolean (True if it looks like a bust).
@@ -282,7 +329,7 @@ class AIService:
             return result.get('is_bust_candidate', False)
         return False
 
-    def cluster_neighborhoods(self, titles):
+    def cluster_neighborhoods(self, titles: List[str]) -> List[Dict[str, Any]]:
         """
         Groups a list of titles into neighborhood/community clusters using AI.
         Returns a list of cluster objects: {"name": "Neighborhood Name", "indices": [0, 2, 5]}
@@ -308,3 +355,4 @@ class AIService:
         if isinstance(result, dict):
             return result.get('clusters', [])
         return []
+

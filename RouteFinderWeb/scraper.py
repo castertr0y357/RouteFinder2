@@ -1,3 +1,4 @@
+from typing import Any, Dict, List
 import requests
 import logging
 from bs4 import BeautifulSoup
@@ -5,11 +6,12 @@ from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
 # Hardening: Consolidated global session with retries and browser-like User-Agent
-def get_hardened_session():
+def get_hardened_session() -> requests.Session:
     s = requests.Session()
     retries = Retry(
         total=4,
@@ -30,9 +32,9 @@ def get_hardened_session():
 
 session = get_hardened_session()
 
-def _get_yardsalesearch_sales(zip_code, radius):
+def _get_yardsalesearch_sales(zip_code: str, radius: int) -> List[Dict[str, Any]]:
     """Internal scraper for YardSaleSearch.com"""
-    sales = []
+    sales: List[Dict[str, Any]] = []
     url = f"https://www.yardsalesearch.com/garage-sales.html?zip={zip_code}&r={radius}"
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
@@ -77,7 +79,7 @@ def _get_yardsalesearch_sales(zip_code, radius):
                                     else:
                                         t_obj = datetime.strptime(raw_time, "%I%p") if 'M' in raw_time else datetime.strptime(raw_time, "%H")
                                     start_time_sort = t_obj.strftime("%H:%M")
-                                except:
+                                except Exception:
                                     pass
                     
                     # If we have a description, try to find a time pattern as fallback
@@ -101,7 +103,7 @@ def _get_yardsalesearch_sales(zip_code, radius):
                                     else:
                                         t_obj = datetime.strptime(raw_time, "%I%p") if 'M' in raw_time else datetime.strptime(raw_time, "%H")
                                     start_time_sort = t_obj.strftime("%H:%M")
-                                except:
+                                except Exception:
                                     pass
 
                     link_elem = title_elem.find('a')
@@ -132,7 +134,7 @@ def _get_yardsalesearch_sales(zip_code, radius):
         
     return sales
 
-def _enrich_sale_details(sale):
+def _enrich_sale_details(sale: Dict[str, Any]) -> Dict[str, Any]:
     """Fetches the detail page for a single sale to extract precise time and full description."""
     url = sale.get('source_url')
     if not url or not url.startswith('http'):
@@ -174,7 +176,7 @@ def _enrich_sale_details(sale):
                                         else:
                                             t_obj = datetime.strptime(raw_time, "%I%p") if 'M' in raw_time else datetime.strptime(raw_time, "%H")
                                         start_time = t_obj.strftime("%H:%M")
-                                    except:
+                                    except Exception:
                                         pass
                             
                             # Combine date and time for robust sorting
@@ -197,15 +199,37 @@ def _enrich_sale_details(sale):
     logger.info(f"Final Extracted Data: ID={sale.get('id')}, Time='{sale.get('time')}', Sort='{sale.get('start_time_sort')}'")
     return sale
 
-def scrape_sales(zip_code, radius=15):
+def scrape_sales(zip_code: str, radius: int = 15) -> List[Dict[str, Any]]:
     """
     Primary entry point for garage sale discovery. 
     Uses thread pooling to fetch and enrich multiple sources in parallel.
     """
-    all_sales = []
+    if getattr(settings, 'MOCK_MODE', False):
+        logger.info(f"MOCK_MODE: Mocking garage sales for zip {zip_code}")
+        return [
+            {
+                'id': 'sale_mock_1',
+                'title': f'St. Jude Church Annual Sale ({zip_code})',
+                'address': '123 Fake St, Springfield, ST',
+                'time': 'Saturday 8:00 AM - 2:00 PM',
+                'start_time_sort': '08:00',
+                'desc': 'Huge multi-family church sale! Furniture, clothes, kids toys, baking goods.',
+                'source_url': f"https://www.yardsalesearch.com/garage-sales.html?zip={zip_code}"
+            },
+            {
+                'id': 'sale_mock_2',
+                'title': f'Neighborhood Community Yard Sale ({zip_code})',
+                'address': '456 Oak Lane, Springfield, ST',
+                'time': 'Saturday 9:00 AM - 12:00 PM',
+                'start_time_sort': '09:00',
+                'desc': 'Entire cul-de-sac participating. Lots of tools, electronics, and vintage books.',
+                'source_url': f"https://www.yardsalesearch.com/garage-sales.html?zip={zip_code}"
+            }
+        ]
+
+    all_sales: List[Dict[str, Any]] = []
     logger.info(f"Starting scrape for zip {zip_code} at radius {radius}")
     
-    # Using ThreadPoolExecutor for future scalability
     with ThreadPoolExecutor(max_workers=10) as executor:
         # Submit all primary scraper tasks
         future_yss = executor.submit(_get_yardsalesearch_sales, zip_code, radius)
@@ -228,7 +252,7 @@ def scrape_sales(zip_code, radius=15):
         except Exception as e:
             logger.error(f"Scraper thread failed: {e}")
     
-    # 2. Demonstration Fallback
+    # Demonstration Fallback
     if not all_sales:
         logger.info("No sales found natively, injecting demonstration fallback.")
         all_sales = [
@@ -256,7 +280,7 @@ def scrape_sales(zip_code, radius=15):
     return all_sales
 
 
-def _fetch_store_details(gmaps, place):
+def _fetch_store_details(gmaps: Any, place: Dict[str, Any]) -> Dict[str, str]:
     """Internal helper to fetch opening hours for a specific place."""
     try:
         # Request specific fields to minimize cost/latency
@@ -274,9 +298,8 @@ def _fetch_store_details(gmaps, place):
         weekday_text = opening_hours.get('weekday_text', [])
         
         if weekday_text:
-            import datetime
             import re
-            now = datetime.datetime.now()
+            now = datetime.now()
             day_name = now.strftime("%A") 
             for line in weekday_text:
                 if line.startswith(day_name):
@@ -288,11 +311,11 @@ def _fetch_store_details(gmaps, place):
                         raw_time = time_match.group(1).upper().replace(' ', '')
                         try:
                             if ':' in raw_time:
-                                t_obj = datetime.datetime.strptime(raw_time, "%I:%M%p") if 'M' in raw_time else datetime.datetime.strptime(raw_time, "%H:%M")
+                                t_obj = datetime.strptime(raw_time, "%I:%M%p") if 'M' in raw_time else datetime.strptime(raw_time, "%H:%M")
                             else:
-                                t_obj = datetime.datetime.strptime(raw_time, "%I%p") if 'M' in raw_time else datetime.datetime.strptime(raw_time, "%H")
+                                t_obj = datetime.strptime(raw_time, "%I%p") if 'M' in raw_time else datetime.strptime(raw_time, "%H")
                             start_time_sort = t_obj.strftime("%H:%M")
-                        except:
+                        except Exception:
                             pass
                     break
         elif opening_hours.get('open_now') is not None:
@@ -303,14 +326,41 @@ def _fetch_store_details(gmaps, place):
             'start_time_sort': start_time_sort,
             'phone': result.get('formatted_phone_number', 'No phone listed')
         }
-    except:
+    except Exception:
         return {'hours': 'Hours not listed', 'start_time_sort': '09:00', 'phone': 'No phone listed'}
 
-def scrape_thrift_stores(zip_code, api_key):
+def scrape_thrift_stores(zip_code: str, api_key: str) -> List[Dict[str, Any]]:
     """
     Utilizes Google Maps Places API to locate thrift stores.
     Now enriched with today's business hours and normalized start times for sorting.
     """
+    if getattr(settings, 'MOCK_MODE', False) or not api_key:
+        logger.info(f"MOCK_MODE: Mocking thrift stores for zip {zip_code}")
+        return [
+            {
+                'id': 'thrift_mock_1',
+                'title': f'Springfield Goodwill Center ({zip_code})',
+                'address': '789 Main St, Springfield, ST',
+                'lat': 37.7749,
+                'lng': -122.4194,
+                'time': 'Today: 9:00 AM – 7:00 PM',
+                'desc': 'Rating: 4.2⭐ (150 reviews) | 📞 (555) 019-2834',
+                'source_url': 'https://www.google.com/maps',
+                'start_time_sort': '09:00'
+            },
+            {
+                'id': 'thrift_mock_2',
+                'title': f'The Salvation Army Family Store ({zip_code})',
+                'address': '101 Pine Rd, Springfield, ST',
+                'lat': 37.7750,
+                'lng': -122.4195,
+                'time': 'Today: 10:00 AM – 6:00 PM',
+                'desc': 'Rating: 3.9⭐ (88 reviews) | 📞 (555) 019-5678',
+                'source_url': 'https://www.google.com/maps',
+                'start_time_sort': '10:00'
+            }
+        ]
+
     import googlemaps
     try:
         gmaps = googlemaps.Client(key=api_key)
@@ -346,3 +396,4 @@ def scrape_thrift_stores(zip_code, api_key):
     except Exception as e:
         logger.error(f"Places Fetch Error: {str(e)}")
         return []
+

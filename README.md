@@ -57,6 +57,23 @@ RouteFinder 2.0 is a production-hardened, high-intensity scouting suite designed
 
 ---
 
+## 💾 Database Backups & Recovery
+
+The suite includes an automated utility to back up and restore the database (supporting both SQLite and PostgreSQL):
+
+*   **Perform Backup**:
+    ```bash
+    python backup_db.py
+    ```
+    This dumps the database to a compressed, timestamped file in the `backups/` directory (e.g., `backups/backup_20260613_120000.sqlite3.gz`).
+
+*   **Restore Backup**:
+    ```bash
+    python backup_db.py --restore backups/backup_20260613_120000.sqlite3.gz
+    ```
+
+---
+
 ## 📱 Mobile Installation
 
 *   **Android (Chrome)**: Tap the **📲 INSTALL APP** button in the header or select "Add to Home Screen" from the Chrome menu.

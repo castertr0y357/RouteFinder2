@@ -1,11 +1,12 @@
+from typing import Any
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
 import os
 
 class Command(BaseCommand):
-    help = 'Creates a default superuser from .env variables on startup if it does not already exist'
+    help: str = 'Creates a default superuser from .env variables on startup if it does not already exist'
 
-    def handle(self, *args, **options):
+    def handle(self, *args: Any, **options: Any) -> None:
         # Pull from environment variables
         admin_user = os.environ.get('DEFAULT_ADMIN_USER', 'admin')
         admin_email = os.environ.get('DEFAULT_ADMIN_EMAIL', 'admin@example.com')
