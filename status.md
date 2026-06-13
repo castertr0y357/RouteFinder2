@@ -12,7 +12,16 @@
 - Fixed a `TemplateSyntaxError` on the Discover page caused by an unclosed `{% if perform_search %}` tag and malformed `div`/`script` elements.
 - Added support for custom Ollama URLs, custom models, and standard OpenAI-compatible API URLs by introducing `ai_provider`, `ai_api_url`, `ai_model`, and `ai_api_key` fields to `UserProfile`.
 - Updated the profile settings page dynamically to show/hide provider-specific settings (e.g. hiding API key for Ollama, updating Base URL label).
-- Updated `AIService` to format payloads and request headers correctly for both native Ollama endpoints and standard OpenAI endpoints.
+- Updated `UserProfile` and related database models to declare index properties explicitly using `db_index=True` on ForeignKey and OneToOneField relationships.
+- Refactored monolithic views logic by splitting `views.py` into a clean package (`views/base_views.py`, `views/discovery_views.py`, `views/auth_views.py`, `views/__init__.py`).
+- Set up a startup diagnostics process in `apps.py` to perform database pre-flight checks and validate critical configurations (e.g. Google Maps key, Secret Key validation).
+- Implemented typing annotations across all python models, services, backends, forms, and views.
+- Introduced `MOCK_MODE=True` settings and service support to geolocode, query listings/clusters, solve TSP route coordinates, and analyze targets completely offline.
+- Added a diagnostic health utility script `doctor.py`.
+- Developed database backup and restoration script `backup_db.py` (with SQLite/PostgreSQL, timestamping, and compression support) and documented it in `README.md`.
+- Excluded the `backups/` directory in `.gitignore`.
+- Configured non-root execution permissions for container security in `Dockerfile`.
+- Partitioned development volume mounts out of `docker-compose.yml` into `docker-compose.override.yml`.
 
 ## 🛠️ Active Tasks
 - None
