@@ -95,7 +95,11 @@
         <a href="https://www.craigslist.org/search/gms?postal={{ zip_code }}&search_distance={{ radius|default:'20' }}" target="_blank" rel="noopener noreferrer" style="display: inline-block; padding: 0.75rem 1.5rem; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 0.5rem; color: white; text-decoration: none; font-weight: 600; font-size: 0.9rem; transition: all 0.2s ease;">
             🔍 Search Craigslist for this area
         </a>
-    <script>
+    </div>
+</div>
+{% endif %}
+
+<script>
 let map;
 let markers = [];
 let geocoder;
@@ -407,7 +411,6 @@ async function hideSale(address, btn) {
             finally { locationBtn.disabled = false; locBtnContent.innerHTML = originalContent; }
         }, () => { locationBtn.disabled = false; locBtnContent.innerHTML = originalContent; });
     });
-</script>
 </script>
 
 <style>

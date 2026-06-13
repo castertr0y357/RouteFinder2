@@ -115,3 +115,14 @@ class AIServiceTests(TestCase):
         self.assertIn("Perform detailed logical reasoning with an effort level of 80%", payload['prompt'])
 
 
+class SaleDiscoveryViewTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="testuser", password="password")
+        self.client.login(username="testuser", password="password")
+
+    def test_discover_page_renders(self):
+        response = self.client.get('/discover/')
+        self.assertEqual(response.status_code, 200)
+
+
+

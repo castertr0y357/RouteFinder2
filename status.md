@@ -9,6 +9,7 @@
 - Implemented AI Settings in User Profile with a tabbed UI (Address, Defaults, AI Settings).
 - Added switch toggles for AI Enablement, AI Deep Thinking, and a range slider for Thinking Effort (1-100).
 - Integrated user profile settings into `AIService` to bypass queries when disabled and apply thinking configurations (think parameter, custom instruction budget, temperature adjustment).
+- Fixed a `TemplateSyntaxError` on the Discover page caused by an unclosed `{% if perform_search %}` tag and malformed `div`/`script` elements.
 
 ## 🛠️ Active Tasks
 - None
