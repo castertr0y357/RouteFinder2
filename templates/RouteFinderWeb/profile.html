@@ -62,6 +62,34 @@
 
                 <!-- AI Dependent settings container -->
                 <div id="ai-settings-dependent">
+                    <!-- Provider Selection -->
+                    <div class="form-group">
+                        <label for="{{ form.ai_provider.id_for_label }}">{{ form.ai_provider.label }}</label>
+                        {{ form.ai_provider }}
+                        {% if form.ai_provider.errors %}<div style="color: var(--bust-color); font-size: 0.85rem; margin-top: -0.75rem; margin-bottom: 1rem;">{{ form.ai_provider.errors }}</div>{% endif %}
+                    </div>
+
+                    <!-- API Base URL -->
+                    <div id="ai-api-url-wrapper" class="form-group">
+                        <label for="{{ form.ai_api_url.id_for_label }}" id="ai-api-url-label">{{ form.ai_api_url.label }}</label>
+                        {{ form.ai_api_url }}
+                        {% if form.ai_api_url.errors %}<div style="color: var(--bust-color); font-size: 0.85rem; margin-top: -0.75rem; margin-bottom: 1rem;">{{ form.ai_api_url.errors }}</div>{% endif %}
+                    </div>
+
+                    <!-- AI Model Name -->
+                    <div class="form-group">
+                        <label for="{{ form.ai_model.id_for_label }}">{{ form.ai_model.label }}</label>
+                        {{ form.ai_model }}
+                        {% if form.ai_model.errors %}<div style="color: var(--bust-color); font-size: 0.85rem; margin-top: -0.75rem; margin-bottom: 1rem;">{{ form.ai_model.errors }}</div>{% endif %}
+                    </div>
+
+                    <!-- API Key (Optional) -->
+                    <div id="ai-api-key-wrapper" class="form-group">
+                        <label for="{{ form.ai_api_key.id_for_label }}">{{ form.ai_api_key.label }}</label>
+                        {{ form.ai_api_key }}
+                        {% if form.ai_api_key.errors %}<div style="color: var(--bust-color); font-size: 0.85rem; margin-top: -0.75rem; margin-bottom: 1rem;">{{ form.ai_api_key.errors }}</div>{% endif %}
+                    </div>
+
                     <!-- Switch for ai_thinking_enabled -->
                     <div class="switch-wrapper">
                         <div class="switch-info">
@@ -141,6 +169,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const aiThinkingEffortWrapper = document.getElementById('ai-thinking-effort-wrapper');
     const effortSlider = document.getElementById('{{ form.ai_thinking_effort.id_for_label }}');
     const effortBadge = document.getElementById('effort-value-badge');
+    
+    const aiProviderSelect = document.getElementById('{{ form.ai_provider.id_for_label }}');
+    const aiApiUrlWrapper = document.getElementById('ai-api-url-wrapper');
+    const aiApiUrlLabel = document.getElementById('ai-api-url-label');
+    const aiApiUrlInput = document.getElementById('{{ form.ai_api_url.id_for_label }}');
+    const aiApiKeyWrapper = document.getElementById('ai-api-key-wrapper');
 
     function updateDependentVisibility() {
         if (aiEnabledCheckbox && aiDependentContainer) {
@@ -160,6 +194,21 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    function updateProviderVisibility() {
+        if (aiProviderSelect) {
+            const provider = aiProviderSelect.value;
+            if (provider === 'openai') {
+                if (aiApiKeyWrapper) aiApiKeyWrapper.style.display = 'block';
+                if (aiApiUrlLabel) aiApiUrlLabel.innerText = 'OpenAI Base URL';
+                if (aiApiUrlInput) aiApiUrlInput.placeholder = 'e.g. https://api.openai.com/v1';
+            } else {
+                if (aiApiKeyWrapper) aiApiKeyWrapper.style.display = 'none';
+                if (aiApiUrlLabel) aiApiUrlLabel.innerText = 'Ollama API URL';
+                if (aiApiUrlInput) aiApiUrlInput.placeholder = 'e.g. http://localhost:11434';
+            }
+        }
+    }
+
     if (aiEnabledCheckbox) {
         aiEnabledCheckbox.addEventListener('change', updateDependentVisibility);
     }
@@ -169,11 +218,15 @@ document.addEventListener('DOMContentLoaded', function() {
     if (effortSlider) {
         effortSlider.addEventListener('input', updateEffortBadge);
     }
+    if (aiProviderSelect) {
+        aiProviderSelect.addEventListener('change', updateProviderVisibility);
+    }
 
     // Run initial checks
     updateDependentVisibility();
     updateThinkingEffortVisibility();
     updateEffortBadge();
+    updateProviderVisibility();
 });
 </script>
 {% endblock %}

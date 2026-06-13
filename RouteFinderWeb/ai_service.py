@@ -7,57 +7,129 @@ logger = logging.getLogger(__name__)
 
 class AIService:
     def __init__(self, user=None):
-        self.base_url = getattr(settings, 'OLLAMA_BASE_URL', 'http://host.docker.internal:11434')
-        self.model = getattr(settings, 'OLLAMA_MODEL', 'gemma:4b')
         self.user = user
         self.ai_enabled = True
         self.thinking_enabled = False
         self.thinking_effort = 50
+        self.ai_provider = 'ollama'
+        self.api_key = ''
         
-        if user and hasattr(user, 'userprofile'):
-            profile = user.userprofile
+        # Load user profile settings if available, else use defaults from settings
+        profile = getattr(user, 'userprofile', None) if user else None
+        
+        if profile:
             self.ai_enabled = getattr(profile, 'ai_enabled', True)
             self.thinking_enabled = getattr(profile, 'ai_thinking_enabled', False)
             self.thinking_effort = getattr(profile, 'ai_thinking_effort', 50)
+            self.ai_provider = getattr(profile, 'ai_provider', 'ollama')
+            
+            # API URL Configuration
+            profile_url = getattr(profile, 'ai_api_url', '').strip()
+            if profile_url:
+                self.base_url = profile_url
+            else:
+                if self.ai_provider == 'openai':
+                    self.base_url = 'https://api.openai.com/v1'
+                else:
+                    self.base_url = getattr(settings, 'OLLAMA_BASE_URL', 'http://host.docker.internal:11434')
+            
+            # Model Configuration
+            profile_model = getattr(profile, 'ai_model', '').strip()
+            if profile_model:
+                self.model = profile_model
+            else:
+                if self.ai_provider == 'openai':
+                    self.model = 'gpt-4o'
+                else:
+                    self.model = getattr(settings, 'OLLAMA_MODEL', 'gemma:4b')
+            
+            # API Key Configuration
+            self.api_key = getattr(profile, 'ai_api_key', '')
+        else:
+            self.base_url = getattr(settings, 'OLLAMA_BASE_URL', 'http://host.docker.internal:11434')
+            self.model = getattr(settings, 'OLLAMA_MODEL', 'gemma:4b')
 
     def _call_raw(self, prompt, timeout=50):
-        """Executes raw HTTP calls to Ollama with settings and custom thinking options."""
+        """Executes raw HTTP calls to Ollama or OpenAI with settings and custom thinking options."""
         if not self.ai_enabled:
             return None
 
-        payload = {
-            "model": self.model,
-            "prompt": prompt,
-            "stream": False,
-            "format": "json"
-        }
-
+        # Build prompt override if thinking is enabled
         if self.thinking_enabled:
-            payload["think"] = True
-            # Map effort 1-100 to temperature (lower temp/more focused logic for high effort)
-            temp = round(max(0.1, min(1.0, 1.0 - (self.thinking_effort / 100.0))), 2)
-            payload["options"] = {
-                "temperature": temp
-            }
-            # Custom parameter signaling and instruction injection to force reasoning
-            payload["thinking_budget"] = int(self.thinking_effort * 10)
             prompt = f"[System instruction: Perform detailed logical reasoning with an effort level of {self.thinking_effort}% before returning the final response]\n{prompt}"
-            payload["prompt"] = prompt
 
-        try:
-            response = requests.post(
-                f"{self.base_url}/api/generate",
-                json=payload,
-                timeout=timeout
-            )
-            if response.status_code == 200:
-                result_text = response.json().get('response', '{}')
-                return json.loads(result_text)
-            else:
-                logger.error(f"Ollama returned status code {response.status_code}")
-        except Exception as e:
-            logger.error(f"Ollama Call Error: {e}")
-        return None
+        # Standard OpenAI Payload & Routing
+        if self.ai_provider == 'openai':
+            headers = {
+                "Content-Type": "application/json"
+            }
+            if self.api_key:
+                headers["Authorization"] = f"Bearer {self.api_key}"
+
+            payload = {
+                "model": self.model,
+                "messages": [
+                    {"role": "user", "content": prompt}
+                ],
+                "response_format": {"type": "json_object"}
+            }
+
+            if self.thinking_enabled:
+                temp = round(max(0.1, min(1.0, 1.0 - (self.thinking_effort / 100.0))), 2)
+                payload["temperature"] = temp
+
+            url = self.base_url
+            if not (url.endswith('/chat/completions') or url.endswith('/completions')):
+                url = f"{url.rstrip('/')}/chat/completions"
+
+            try:
+                response = requests.post(
+                    url,
+                    headers=headers,
+                    json=payload,
+                    timeout=timeout
+                )
+                if response.status_code == 200:
+                    result_data = response.json()
+                    result_text = result_data['choices'][0]['message']['content']
+                    return json.loads(result_text)
+                else:
+                    logger.error(f"OpenAI compatible API returned status code {response.status_code}: {response.text}")
+            except Exception as e:
+                logger.error(f"OpenAI compatible API Call Error: {e}")
+            return None
+
+        # Native Ollama Payload & Routing
+        else:
+            payload = {
+                "model": self.model,
+                "prompt": prompt,
+                "stream": False,
+                "format": "json"
+            }
+
+            if self.thinking_enabled:
+                payload["think"] = True
+                temp = round(max(0.1, min(1.0, 1.0 - (self.thinking_effort / 100.0))), 2)
+                payload["options"] = {
+                    "temperature": temp
+                }
+                payload["thinking_budget"] = int(self.thinking_effort * 10)
+
+            try:
+                response = requests.post(
+                    f"{self.base_url.rstrip('/')}/api/generate",
+                    json=payload,
+                    timeout=timeout
+                )
+                if response.status_code == 200:
+                    result_text = response.json().get('response', '{}')
+                    return json.loads(result_text)
+                else:
+                    logger.error(f"Ollama returned status code {response.status_code}")
+            except Exception as e:
+                logger.error(f"Ollama Call Error: {e}")
+            return None
 
     def _call_ollama(self, prompt, timeout=50):
         """Shared logic for calling Ollama and adapting JSON responses into lists."""

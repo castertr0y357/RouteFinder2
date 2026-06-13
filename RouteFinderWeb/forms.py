@@ -42,7 +42,8 @@ class UserProfileForm(forms.ModelForm):
         fields = [
             'home_street', 'home_zip', 'home_state', 
             'default_stop_mins', 
-            'looking_for', 'ai_enabled', 'ai_thinking_enabled', 'ai_thinking_effort'
+            'looking_for', 'ai_enabled', 'ai_thinking_enabled', 'ai_thinking_effort',
+            'ai_provider', 'ai_api_url', 'ai_model', 'ai_api_key'
         ]
         labels = {
             'home_street': 'Street & City',
@@ -53,6 +54,10 @@ class UserProfileForm(forms.ModelForm):
             'ai_enabled': 'Enable AI Scouting Features',
             'ai_thinking_enabled': 'Enable AI Deep Thinking',
             'ai_thinking_effort': 'AI Thinking Effort Level',
+            'ai_provider': 'AI Service Provider',
+            'ai_api_url': 'API Base URL',
+            'ai_model': 'AI Model Name',
+            'ai_api_key': 'API Key',
         }
         widgets = {
             'home_street': forms.TextInput(attrs={'placeholder': '123 Main St, City'}),
@@ -63,6 +68,10 @@ class UserProfileForm(forms.ModelForm):
             'ai_enabled': forms.CheckboxInput(attrs={'class': 'switch-checkbox'}),
             'ai_thinking_enabled': forms.CheckboxInput(attrs={'class': 'switch-checkbox'}),
             'ai_thinking_effort': forms.NumberInput(attrs={'type': 'range', 'min': '1', 'max': '100', 'step': '1', 'class': 'range-slider'}),
+            'ai_provider': forms.Select(attrs={'class': 'form-select'}),
+            'ai_api_url': forms.TextInput(attrs={'placeholder': 'e.g. http://localhost:11434'}),
+            'ai_model': forms.TextInput(attrs={'placeholder': 'e.g. gemma:4b or gpt-4o'}),
+            'ai_api_key': forms.PasswordInput(render_value=True, attrs={'placeholder': 'Optional API Key'}),
         }
 
 class SearchForm(forms.Form):

@@ -17,6 +17,16 @@ class UserProfile(models.Model):
     ai_enabled = models.BooleanField(default=True, help_text="Toggle all AI functionalities in the application")
     ai_thinking_enabled = models.BooleanField(default=False, help_text="Toggle AI thinking/reasoning")
     ai_thinking_effort = models.IntegerField(default=50, help_text="Adjust thinking effort (1-100)")
+    
+    # Provider & Model Settings
+    ai_provider = models.CharField(
+        max_length=50, 
+        default='ollama', 
+        choices=[('ollama', 'Ollama (Native)'), ('openai', 'OpenAI Compatible')]
+    )
+    ai_api_url = models.CharField(max_length=500, blank=True, help_text="Custom API base URL")
+    ai_model = models.CharField(max_length=255, default='gemma:4b', help_text="Model name to target")
+    ai_api_key = models.CharField(max_length=255, blank=True, help_text="Optional API Key for authentication")
 
     def __str__(self):
         return f"{self.user.username}'s Profile"

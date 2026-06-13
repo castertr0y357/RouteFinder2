@@ -114,6 +114,53 @@ class AIServiceTests(TestCase):
         self.assertEqual(payload['thinking_budget'], 800)
         self.assertIn("Perform detailed logical reasoning with an effort level of 80%", payload['prompt'])
 
+    @patch('requests.post')
+    def test_openai_payload(self, mock_post):
+        self.profile.ai_enabled = True
+        self.profile.ai_provider = 'openai'
+        self.profile.ai_api_url = 'https://custom-openai-api.com/v1/'
+        self.profile.ai_model = 'gpt-4o-custom'
+        self.profile.ai_api_key = 'test-key-123'
+        self.profile.ai_thinking_enabled = True
+        self.profile.ai_thinking_effort = 50
+        self.profile.save()
+
+        ai = AIService(user=self.user)
+        self.assertEqual(ai.ai_provider, 'openai')
+        self.assertEqual(ai.base_url, 'https://custom-openai-api.com/v1/')
+        self.assertEqual(ai.model, 'gpt-4o-custom')
+        self.assertEqual(ai.api_key, 'test-key-123')
+
+        # Mock OpenAI response
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = {
+            "choices": [{
+                "message": {
+                    "content": '{"is_bust_candidate": false}'
+                }
+            }]
+        }
+        mock_post.return_value = mock_resp
+
+        # Perform query
+        is_bust = ai.predict_bust_suitability("Baby stuff", ["Marked baby stuff as bust"])
+        self.assertFalse(is_bust)
+
+        # Verify requests.post called with correct OpenAI URL and headers
+        mock_post.assert_called_once()
+        args, kwargs = mock_post.call_args
+        
+        self.assertEqual(args[0], 'https://custom-openai-api.com/v1/chat/completions')
+        self.assertEqual(kwargs['headers']['Authorization'], 'Bearer test-key-123')
+        
+        payload = kwargs['json']
+        self.assertEqual(payload['model'], 'gpt-4o-custom')
+        self.assertEqual(payload['messages'][0]['role'], 'user')
+        self.assertEqual(payload['response_format'], {"type": "json_object"})
+        self.assertEqual(payload['temperature'], 0.5)
+
+
 
 class SaleDiscoveryViewTests(TestCase):
     def setUp(self):
